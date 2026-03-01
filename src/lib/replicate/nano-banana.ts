@@ -23,8 +23,16 @@ export async function generateImage(input: NanoBananaInput): Promise<NanoBananaR
     },
   })
 
-  const imageUrl = Array.isArray(output) ? output[0] : output
-  if (typeof imageUrl !== 'string') {
+  const rawOutput = Array.isArray(output) ? output[0] : output
+  if (!rawOutput) {
+    throw new Error('No output from Replicate')
+  }
+
+  // Replicate SDK v1.x returns FileOutput objects instead of plain strings.
+  // FileOutput.toString() returns the URL string.
+  const imageUrl = typeof rawOutput === 'string' ? rawOutput : String(rawOutput)
+
+  if (!imageUrl || (!imageUrl.startsWith('https:') && !imageUrl.startsWith('data:'))) {
     throw new Error('Unexpected output format from Replicate')
   }
 

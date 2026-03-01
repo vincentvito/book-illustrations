@@ -4,6 +4,18 @@ import { z } from 'zod'
 
 const UpdateStorySchema = z.object({
   title: z.string().min(1).max(200).optional(),
+  book_profile: z.object({
+    genre: z.string(),
+    ageRange: z.string(),
+    moods: z.array(z.string()).min(1),
+    characterStyle: z.string(),
+    illustrationType: z.string(),
+    era: z.string(),
+    culturalInfluence: z.string(),
+    detailLevel: z.string(),
+    lightingMood: z.string(),
+    visualMotifs: z.string(),
+  }).optional(),
 })
 
 export async function GET(

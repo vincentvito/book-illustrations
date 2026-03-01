@@ -12,8 +12,8 @@ import type { Subject } from '@/types/generation'
 export default function SubjectsPage() {
   const router = useRouter()
   const {
-    storyText, mode, subjects, selectedSubjects,
-    setSubjects, selectSubject, deselectSubject, replaceSubject, setStatus, status
+    storyText, bookProfile, mode, subjects, selectedSubjects,
+    setSubjects, setCharacters, selectSubject, deselectSubject, replaceSubject, setStatus, status
   } = useGenerationStore()
   const [regeneratingId, setRegeneratingId] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
@@ -29,7 +29,7 @@ export default function SubjectsPage() {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ storyText, mode }),
+        body: JSON.stringify({ storyText, mode, bookProfile: bookProfile ?? undefined }),
       })
 
       if (!res.ok) {
@@ -52,6 +52,9 @@ export default function SubjectsPage() {
       const data = await res.json()
 
       if (data.subjects && Array.isArray(data.subjects) && data.subjects.length > 0) {
+        if (data.characters && Array.isArray(data.characters)) {
+          setCharacters(data.characters)
+        }
         setSubjects(data.subjects)
         setStatus('idle')
       } else {
@@ -85,7 +88,7 @@ export default function SubjectsPage() {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ storyText, mode }),
+        body: JSON.stringify({ storyText, mode, bookProfile: bookProfile ?? undefined }),
       })
 
       if (!res.ok) {

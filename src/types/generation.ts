@@ -1,3 +1,8 @@
+export interface Character {
+  name: string
+  appearance: string
+}
+
 export interface Subject {
   id: number
   title: string
@@ -7,6 +12,7 @@ export interface Subject {
 }
 
 export interface AnalysisResponse {
+  characters?: Character[]
   subjects: Subject[]
 }
 

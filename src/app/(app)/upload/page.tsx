@@ -50,9 +50,9 @@ export default function UploadPage() {
         setStoryId(story.id)
       }
 
-      router.push('/generate')
+      router.push('/generate/profile')
     } catch {
-      router.push('/generate')
+      router.push('/generate/profile')
     } finally {
       setCreating(false)
     }

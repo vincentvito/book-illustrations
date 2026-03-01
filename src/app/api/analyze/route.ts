@@ -3,10 +3,25 @@ import { createClient } from '@/lib/supabase/server'
 import { getAnthropic } from '@/lib/claude/client'
 import { buildAnalysisPrompt } from '@/lib/claude/prompts'
 import { z } from 'zod'
+import type { BookProfile } from '@/types/book-profile'
+
+const BookProfileSchema = z.object({
+  genre: z.string(),
+  ageRange: z.string(),
+  moods: z.array(z.string()).min(1),
+  characterStyle: z.string(),
+  illustrationType: z.string(),
+  era: z.string(),
+  culturalInfluence: z.string(),
+  detailLevel: z.string(),
+  lightingMood: z.string(),
+  visualMotifs: z.string(),
+}).optional()
 
 const RequestSchema = z.object({
   storyText: z.string().min(50).max(50_000),
   mode: z.enum(['cover', 'single', 'all']),
+  bookProfile: BookProfileSchema,
 })
 
 export async function POST(req: NextRequest) {
@@ -20,8 +35,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  const { storyText, mode } = parsed.data
-  const prompt = buildAnalysisPrompt(storyText, mode)
+  const { storyText, mode, bookProfile } = parsed.data
+  const prompt = buildAnalysisPrompt(storyText, mode, bookProfile as BookProfile | undefined)
 
   try {
     const message = await getAnthropic().messages.create({

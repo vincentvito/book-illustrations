@@ -7,6 +7,20 @@ import { BOOK_FORMATS } from '@/lib/image/formats'
 import { findClosestAspectRatio } from '@/lib/image/aspect-ratio'
 import { deductCredit } from '@/lib/credits'
 import { z } from 'zod'
+import type { BookProfile } from '@/types/book-profile'
+
+const BookProfileSchema = z.object({
+  genre: z.string(),
+  ageRange: z.string(),
+  moods: z.array(z.string()).min(1),
+  characterStyle: z.string(),
+  illustrationType: z.string(),
+  era: z.string(),
+  culturalInfluence: z.string(),
+  detailLevel: z.string(),
+  lightingMood: z.string(),
+  visualMotifs: z.string(),
+}).optional()
 
 const GenerateSchema = z.object({
   subject: z.string().min(10),
@@ -17,6 +31,7 @@ const GenerateSchema = z.object({
   bookFormatId: z.string(),
   resolution: z.enum(['1K', '2K', '4K']).default('2K'),
   storyId: z.string().uuid().optional(),
+  bookProfile: BookProfileSchema,
 })
 
 export async function POST(req: NextRequest) {
@@ -30,7 +45,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  const { subject, style, palette, customPalettePrompt, mode, bookFormatId, resolution, storyId } = parsed.data
+  const { subject, style, palette, customPalettePrompt, mode, bookFormatId, resolution, storyId, bookProfile: bookProfileData } = parsed.data
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -54,6 +69,7 @@ export async function POST(req: NextRequest) {
     customPalettePrompt,
     mode,
     bookFormat,
+    bookProfile: bookProfileData as BookProfile | undefined,
   })
 
   const arInfo = findClosestAspectRatio(bookFormat.aspectRatio)

@@ -1,12 +1,15 @@
 import { create } from 'zustand'
 import type { StylePresetId, PalettePresetId } from '@/lib/prompt-builder'
-import type { Subject, GenerationMode, GenerationStatus } from '@/types/generation'
+import type { Subject, Character, GenerationMode, GenerationStatus } from '@/types/generation'
+import type { BookProfile } from '@/types/book-profile'
 
 interface GenerationState {
   storyId: string | null
   storyText: string | null
   storyFilename: string | null
+  bookProfile: BookProfile | null
   mode: GenerationMode | null
+  characters: Character[]
   subjects: Subject[]
   selectedSubjects: Subject[]
   style: StylePresetId | null
@@ -18,7 +21,9 @@ interface GenerationState {
 
   setStoryId: (id: string) => void
   setStory: (text: string, filename?: string) => void
+  setBookProfile: (profile: BookProfile) => void
   setMode: (mode: GenerationMode) => void
+  setCharacters: (characters: Character[]) => void
   setSubjects: (subjects: Subject[]) => void
   selectSubject: (subject: Subject) => void
   deselectSubject: (subjectId: number) => void
@@ -35,7 +40,9 @@ const initialState = {
   storyId: null as string | null,
   storyText: null,
   storyFilename: null,
+  bookProfile: null as BookProfile | null,
   mode: null,
+  characters: [] as Character[],
   subjects: [],
   selectedSubjects: [],
   style: null,
@@ -51,7 +58,9 @@ export const useGenerationStore = create<GenerationState>((set) => ({
 
   setStoryId: (id) => set({ storyId: id }),
   setStory: (text, filename) => set({ storyText: text, storyFilename: filename ?? null }),
-  setMode: (mode) => set({ mode, subjects: [], selectedSubjects: [] }),
+  setBookProfile: (profile) => set({ bookProfile: profile }),
+  setMode: (mode) => set({ mode, characters: [], subjects: [], selectedSubjects: [] }),
+  setCharacters: (characters) => set({ characters }),
   setSubjects: (subjects) => set({ subjects }),
   selectSubject: (subject) => set((state) => ({
     selectedSubjects: state.mode === 'all'

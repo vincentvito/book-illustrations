@@ -1,5 +1,16 @@
 import { findClosestAspectRatio } from '@/lib/image/aspect-ratio'
 import type { BookFormat } from '@/lib/image/formats'
+import type { BookProfile } from '@/types/book-profile'
+import {
+  BOOK_GENRES,
+  AGE_RANGES,
+  MOOD_TONES,
+  CHARACTER_STYLES,
+  ILLUSTRATION_TYPES,
+  DETAIL_LEVELS,
+  LIGHTING_MOODS,
+  CULTURAL_INFLUENCES,
+} from '@/types/book-profile'
 
 export const STYLE_PRESETS = {
   watercolor: {
@@ -128,10 +139,118 @@ export interface PromptOptions {
   customPalettePrompt?: string
   mode: 'cover' | 'single' | 'all'
   bookFormat: BookFormat
+  bookProfile?: BookProfile
 }
 
+// ── Helper ────────────────────────────────────────────────────────────────
+
+function profileLabel<T extends { id: string; label: string }>(
+  list: readonly T[],
+  id: string
+): string {
+  return list.find((item) => item.id === id)?.label ?? id
+}
+
+function buildProfilePromptBlock(profile: BookProfile): string {
+  const genre = profileLabel(BOOK_GENRES, profile.genre)
+  const age = profileLabel(AGE_RANGES, profile.ageRange)
+  const moods = profile.moods.map((m) => profileLabel(MOOD_TONES, m)).join(', ')
+  const detail = profileLabel(DETAIL_LEVELS, profile.detailLevel)
+  const lighting = profileLabel(LIGHTING_MOODS, profile.lightingMood)
+
+  const lines: string[] = []
+
+  // Audience — drives complexity and content safety
+  lines.push(`AUDIENCE: ${genre} for ${age}. `)
+  switch (profile.ageRange) {
+    case '0-3':
+    case '3-5':
+      lines[lines.length - 1] += 'Use simple, clear compositions with large friendly characters. Bright, saturated colors. Rounded, friendly shapes. No scary or complex imagery.'
+      break
+    case '6-8':
+      lines[lines.length - 1] += 'Clear, engaging compositions. Moderately detailed. Bright and inviting. Avoid frightening imagery.'
+      break
+    case '9-12':
+      lines[lines.length - 1] += 'Dynamic, engaging compositions with moderate complexity. Can include action and drama.'
+      break
+    case '13-17':
+      lines[lines.length - 1] += 'Atmospheric, emotionally rich compositions. Detailed environments. Can handle dramatic or intense imagery.'
+      break
+    case '18+':
+      lines[lines.length - 1] += 'Full artistic range. Sophisticated, nuanced compositions with rich detail.'
+      break
+  }
+
+  // Tone
+  lines.push(`TONE: ${moods}. The overall atmosphere should reflect this mood.`)
+
+  // Character style
+  if (profile.characterStyle !== 'auto') {
+    const charLabel = profileLabel(CHARACTER_STYLES, profile.characterStyle)
+    let charInstruction = ''
+    switch (profile.characterStyle) {
+      case 'stylized-cartoon':
+        charInstruction = 'rounded features, exaggerated expressions, bold outlines'
+        break
+      case 'chibi-cute':
+        charInstruction = 'oversized heads, tiny bodies, large sparkling eyes'
+        break
+      case 'anthropomorphic':
+        charInstruction = 'animal characters with human posture and clothing'
+        break
+      case 'abstract-silhouette':
+        charInstruction = 'shapes and silhouettes, focus on gesture over detail'
+        break
+      case 'realistic':
+        charInstruction = 'realistic proportions, detailed features, natural textures'
+        break
+      case 'classic-storybook':
+        charInstruction = 'warm, gentle features, slightly idealized, traditional illustration feel'
+        break
+    }
+    lines.push(`CHARACTER STYLE: ${charLabel} — ${charInstruction}.`)
+  }
+
+  // Detail level
+  lines.push(`DETAIL: ${detail} level of detail.`)
+
+  // Lighting
+  lines.push(`LIGHTING: ${lighting}.`)
+
+  // Illustration type composition hints
+  switch (profile.illustrationType) {
+    case 'spot':
+      lines.push('FRAMING: Spot illustration — subject floats on white/transparent background, no full scene, compact composition.')
+      break
+    case 'vignette':
+      lines.push('FRAMING: Vignette — scene fades softly into white at the edges, no hard borders.')
+      break
+    case 'half-page':
+      lines.push('FRAMING: Half-page illustration — compose to work in roughly half the page area, leave clear space on one side for text.')
+      break
+    case 'double-spread':
+      lines.push('FRAMING: Double-page spread — ultra-wide panoramic composition, spread across full horizontal extent.')
+      break
+  }
+
+  // Cultural context
+  if (profile.culturalInfluence !== 'none') {
+    const culture = profileLabel(CULTURAL_INFLUENCES, profile.culturalInfluence)
+    lines.push(`CULTURAL CONTEXT: ${culture} influence — reflect in architecture, clothing, patterns, and environmental details.`)
+  }
+
+  // Visual motifs
+  if (profile.visualMotifs) {
+    lines.push(`VISUAL MOTIFS: Include these recurring elements: ${profile.visualMotifs}.`)
+  }
+
+  return lines.join('\n')
+}
+
+// ── Main export ───────────────────────────────────────────────────────────
+
 export function buildNanoBananaPrompt(options: PromptOptions): string {
-  const { subject, style, palette, customPalettePrompt, mode, bookFormat } = options
+  const { subject, style, palette, customPalettePrompt, mode, bookFormat, bookProfile } = options
 
   const stylePrompt = STYLE_PRESETS[style].prompt
   const palettePrompt = palette === 'custom'
@@ -153,7 +272,9 @@ export function buildNanoBananaPrompt(options: PromptOptions): string {
     compositionInstruction = `COMPOSITION: Square format illustration. Center the main subject with balanced composition on all sides.`
   }
 
-  return [
+  const profileBlock = bookProfile ? buildProfilePromptBlock(bookProfile) : ''
+
+  const parts = [
     subject,
     '',
     `STYLE: ${stylePrompt}`,
@@ -161,7 +282,13 @@ export function buildNanoBananaPrompt(options: PromptOptions): string {
     `COLOR PALETTE: ${palettePrompt}`,
     '',
     compositionInstruction,
-    '',
-    'High quality, detailed book illustration, professional publishing quality.',
-  ].join('\n').trim()
+  ]
+
+  if (profileBlock) {
+    parts.push('', profileBlock)
+  }
+
+  parts.push('', 'High quality, detailed book illustration, professional publishing quality.')
+
+  return parts.join('\n').trim()
 }

@@ -8,10 +8,15 @@ import { ArrowRight, ArrowLeft } from 'lucide-react'
 
 export default function GeneratePage() {
   const router = useRouter()
-  const { storyText, mode, setMode } = useGenerationStore()
+  const { storyText, bookProfile, mode, setMode } = useGenerationStore()
 
   if (!storyText) {
     router.push('/upload')
+    return null
+  }
+
+  if (!bookProfile) {
+    router.push('/generate/profile')
     return null
   }
 
@@ -25,7 +30,7 @@ export default function GeneratePage() {
       <ModeSelector selected={mode} onSelect={setMode} />
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={() => router.push('/upload')}>
+        <Button variant="outline" onClick={() => router.push('/generate/profile')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>

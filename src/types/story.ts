@@ -1,9 +1,12 @@
+import type { BookProfile } from '@/types/book-profile'
+
 export interface Story {
   id: string
   user_id: string
   title: string
   story_text: string
   filename: string | null
+  book_profile: BookProfile | null
   created_at: string
   updated_at: string
 }

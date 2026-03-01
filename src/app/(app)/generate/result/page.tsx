@@ -1,28 +1,34 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useGenerationStore } from '@/stores/generation-store'
 import { GenerationProgress } from '@/components/generate/generation-progress'
 import { ImageResult } from '@/components/generate/image-result'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Plus, Eye } from 'lucide-react'
-import type { StylePresetId, PalettePresetId } from '@/lib/prompt-builder'
 
 export default function ResultPage() {
   const router = useRouter()
   const {
-    storyId, selectedSubjects, style, palette, customPalettePrompt,
+    storyId, bookProfile, selectedSubjects, style, palette, customPalettePrompt,
     mode, bookFormatId, generatedImages,
     addGeneratedImage, setStatus, status, reset,
   } = useGenerationStore()
-  const [currentIndex, setCurrentIndex] = useState(0)
+
+  const [attemptedCount, setAttemptedCount] = useState(0)
+  const [errorCount, setErrorCount] = useState(0)
   const [regenerating, setRegenerating] = useState(false)
 
-  const generateOne = async (subjectIndex: number) => {
+  const inFlightRef = useRef<Set<number>>(new Set())
+
+  const generateOne = useCallback(async (subjectIndex: number) => {
+    if (inFlightRef.current.has(subjectIndex)) return
+
     const subject = selectedSubjects[subjectIndex]
     if (!subject || !style || !palette || !bookFormatId) return
 
+    inFlightRef.current.add(subjectIndex)
     setStatus('generating')
 
     try {
@@ -38,6 +44,7 @@ export default function ResultPage() {
           bookFormatId,
           resolution: '2K',
           storyId: storyId ?? undefined,
+          bookProfile: bookProfile ?? undefined,
         }),
       })
 
@@ -45,40 +52,53 @@ export default function ResultPage() {
 
       if (res.ok && data.imageUrl) {
         addGeneratedImage(data.imageUrl, subject.id)
-        setStatus('completed')
       } else {
-        console.error('Generation failed:', data.error)
-        setStatus('error')
+        console.error('Generation failed for subject', subjectIndex, ':', data.error)
+        setErrorCount(prev => prev + 1)
       }
     } catch (error) {
-      console.error('Generation error:', error)
-      setStatus('error')
+      console.error('Generation error for subject', subjectIndex, ':', error)
+      setErrorCount(prev => prev + 1)
+    } finally {
+      inFlightRef.current.delete(subjectIndex)
+      setAttemptedCount(subjectIndex + 1)
+      setStatus('completed')
     }
-  }
+  }, [selectedSubjects, style, palette, customPalettePrompt, mode, bookFormatId, storyId, bookProfile, addGeneratedImage, setStatus])
 
+  const generateOneRef = useRef(generateOne)
+  generateOneRef.current = generateOne
+
+  // Initial generation on mount
   useEffect(() => {
     if (!selectedSubjects.length || !style || !palette || !bookFormatId) {
       router.push('/generate/style')
       return
     }
 
-    if (generatedImages.length === 0) {
+    if (attemptedCount === 0 && !inFlightRef.current.has(0)) {
       generateOne(0)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Sequential loop: after each completion, schedule the next subject
   useEffect(() => {
     if (
-      mode === 'all' &&
-      status === 'completed' &&
-      generatedImages.length < selectedSubjects.length &&
-      generatedImages.length > currentIndex
+      mode !== 'all' ||
+      status !== 'completed' ||
+      attemptedCount >= selectedSubjects.length
     ) {
-      const nextIndex = generatedImages.length
-      setCurrentIndex(nextIndex)
-      setTimeout(() => generateOne(nextIndex), 1000)
+      return
     }
-  }, [generatedImages.length, status])
+
+    const nextIndex = attemptedCount
+    const timer = setTimeout(() => {
+      generateOneRef.current(nextIndex)
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [mode, status, attemptedCount, selectedSubjects.length])
 
   const handleRegenerate = async () => {
     setRegenerating(true)
@@ -97,6 +117,7 @@ export default function ResultPage() {
           bookFormatId,
           resolution: '2K',
           storyId: storyId ?? undefined,
+          bookProfile: bookProfile ?? undefined,
         }),
       })
 
@@ -126,8 +147,8 @@ export default function ResultPage() {
 
   const isGenerating = status === 'generating' || status === 'processing'
   const allDone = mode === 'all'
-    ? generatedImages.length >= selectedSubjects.length
-    : generatedImages.length > 0
+    ? attemptedCount >= selectedSubjects.length
+    : generatedImages.length > 0 && !isGenerating
 
   return (
     <div className="space-y-8">
@@ -137,7 +158,7 @@ export default function ResultPage() {
         </h1>
         {mode === 'all' && (
           <p className="text-gray-500">
-            {generatedImages.length} of {selectedSubjects.length} illustrations
+            {attemptedCount} of {selectedSubjects.length} illustrations
           </p>
         )}
       </div>
@@ -150,7 +171,7 @@ export default function ResultPage() {
         <div className="space-y-6">
           {generatedImages.map((img, i) => (
             <div key={i}>
-              {mode === 'all' && selectedSubjects[i] && (
+              {mode === 'all' && (
                 <h3 className="mb-2 text-sm font-semibold text-gray-700">
                   {i + 1}. {selectedSubjects.find(s => s.id === img.subjectId)?.title || `Illustration ${i + 1}`}
                 </h3>
@@ -168,6 +189,14 @@ export default function ResultPage() {
 
       {isGenerating && generatedImages.length > 0 && (
         <GenerationProgress status={status} />
+      )}
+
+      {allDone && errorCount > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm text-amber-800">
+            {errorCount} illustration{errorCount !== 1 ? 's' : ''} could not be generated.
+          </p>
+        </div>
       )}
 
       {allDone && !isGenerating && (
