@@ -16,6 +16,7 @@ const GenerateSchema = z.object({
   mode: z.enum(['cover', 'single', 'all']),
   bookFormatId: z.string(),
   resolution: z.enum(['1K', '2K', '4K']).default('2K'),
+  storyId: z.string().uuid().optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  const { subject, style, palette, customPalettePrompt, mode, bookFormatId, resolution } = parsed.data
+  const { subject, style, palette, customPalettePrompt, mode, bookFormatId, resolution, storyId } = parsed.data
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -82,7 +83,15 @@ export async function POST(req: NextRequest) {
       resolution,
       credits_used: 1,
       status: 'completed',
+      story_id: storyId ?? null,
+      image_url: result.imageUrl,
     })
+
+    if (storyId) {
+      await supabase.from('stories')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', storyId)
+    }
 
     return NextResponse.json({
       imageUrl: result.imageUrl,

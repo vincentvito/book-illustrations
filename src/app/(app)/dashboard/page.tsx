@@ -1,39 +1,50 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { Upload, Sparkles, Coins } from 'lucide-react'
-import { Card } from '@/components/ui/card'
-import { CreditBalance } from '@/components/credits/credit-balance'
+import { Plus } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { useStories } from '@/hooks/use-stories'
+import { StoryCard } from '@/components/dashboard/story-card'
+import { EmptyState } from '@/components/dashboard/empty-state'
 
 export default function DashboardPage() {
   const router = useRouter()
+  const { stories, loading } = useStories()
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-500">Create beautiful illustrations for your book</p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Your Stories</h1>
+          <p className="text-gray-500">Manage your illustrated stories</p>
+        </div>
+        <Button onClick={() => router.push('/upload')} className="md:hidden">
+          <Plus className="mr-2 h-4 w-4" />
+          New Story
+        </Button>
       </div>
 
-      <CreditBalance />
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card hoverable onClick={() => router.push('/upload')} className="group">
-          <Upload className="mb-3 h-8 w-8 text-indigo-500 transition-transform group-hover:scale-110" />
-          <h3 className="mb-1 font-semibold text-gray-900">New Project</h3>
-          <p className="text-sm text-gray-500">
-            Upload or paste your story to generate illustrations
-          </p>
-        </Card>
-
-        <Card hoverable onClick={() => router.push('/credits')} className="group">
-          <Coins className="mb-3 h-8 w-8 text-amber-500 transition-transform group-hover:scale-110" />
-          <h3 className="mb-1 font-semibold text-gray-900">Buy Credits</h3>
-          <p className="text-sm text-gray-500">
-            Purchase credits to generate more illustrations
-          </p>
-        </Card>
-      </div>
+      {loading ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="animate-pulse rounded-xl border border-gray-200 bg-white">
+              <div className="aspect-[16/9] bg-gray-100 rounded-t-xl" />
+              <div className="p-4 space-y-2">
+                <div className="h-4 w-2/3 rounded bg-gray-100" />
+                <div className="h-3 w-1/3 rounded bg-gray-100" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : stories.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {stories.map(story => (
+            <StoryCard key={story.id} story={story} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

@@ -17,11 +17,13 @@ export default function SubjectsPage() {
   } = useGenerationStore()
   const [regeneratingId, setRegeneratingId] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchSubjects = async () => {
     if (!storyText || !mode) return
     setLoading(true)
     setStatus('analyzing')
+    setError(null)
 
     try {
       const res = await fetch('/api/analyze', {
@@ -29,16 +31,39 @@ export default function SubjectsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ storyText, mode }),
       })
+
+      if (!res.ok) {
+        let errorMessage = 'Failed to analyze story. Please try again.'
+        try {
+          const errorData = await res.json()
+          if (errorData.error && typeof errorData.error === 'string') {
+            errorMessage = errorData.error
+          }
+        } catch {
+          if (res.status === 504 || res.status === 408) {
+            errorMessage = 'The analysis timed out. Your story might be very long — try again or shorten it.'
+          }
+        }
+        setError(errorMessage)
+        setStatus('error')
+        return
+      }
+
       const data = await res.json()
 
-      if (res.ok && data.subjects) {
+      if (data.subjects && Array.isArray(data.subjects) && data.subjects.length > 0) {
         setSubjects(data.subjects)
+        setStatus('idle')
+      } else {
+        setError('The AI returned no suggestions. Please try again.')
+        setStatus('error')
       }
     } catch (error) {
       console.error('Analysis error:', error)
+      setError('Connection error. Check your internet and try again.')
+      setStatus('error')
     } finally {
       setLoading(false)
-      setStatus('idle')
     }
   }
 
@@ -62,9 +87,15 @@ export default function SubjectsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ storyText, mode }),
       })
+
+      if (!res.ok) {
+        console.error('Regenerate failed with status:', res.status)
+        return
+      }
+
       const data = await res.json()
 
-      if (res.ok && data.subjects) {
+      if (data.subjects && Array.isArray(data.subjects)) {
         const newSubject = data.subjects.find((s: Subject) => s.id === subjectId) || data.subjects[0]
         if (newSubject) {
           replaceSubject(subjectId, { ...newSubject, id: subjectId })
@@ -98,6 +129,32 @@ export default function SubjectsPage() {
           <p className="text-gray-500">AI is reading your story...</p>
         </div>
         <GenerationProgress status="analyzing" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Suggested Subjects</h1>
+          <p className="text-gray-500">Something went wrong while analyzing your story.</p>
+        </div>
+
+        <div className="flex flex-col items-center gap-4 rounded-xl border border-red-200 bg-red-50 p-8">
+          <p className="text-center text-sm font-medium text-red-700">{error}</p>
+          <Button onClick={fetchSubjects} loading={loading}>
+            <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+            Try Again
+          </Button>
+        </div>
+
+        <div className="flex justify-start">
+          <Button variant="outline" onClick={() => router.push('/generate')}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+        </div>
       </div>
     )
   }

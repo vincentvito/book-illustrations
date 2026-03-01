@@ -6,13 +6,13 @@ import { useGenerationStore } from '@/stores/generation-store'
 import { GenerationProgress } from '@/components/generate/generation-progress'
 import { ImageResult } from '@/components/generate/image-result'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Plus } from 'lucide-react'
+import { ArrowLeft, Plus, Eye } from 'lucide-react'
 import type { StylePresetId, PalettePresetId } from '@/lib/prompt-builder'
 
 export default function ResultPage() {
   const router = useRouter()
   const {
-    selectedSubjects, style, palette, customPalettePrompt,
+    storyId, selectedSubjects, style, palette, customPalettePrompt,
     mode, bookFormatId, generatedImages,
     addGeneratedImage, setStatus, status, reset,
   } = useGenerationStore()
@@ -37,6 +37,7 @@ export default function ResultPage() {
           mode,
           bookFormatId,
           resolution: '2K',
+          storyId: storyId ?? undefined,
         }),
       })
 
@@ -95,6 +96,7 @@ export default function ResultPage() {
           mode,
           bookFormatId,
           resolution: '2K',
+          storyId: storyId ?? undefined,
         }),
       })
 
@@ -106,6 +108,14 @@ export default function ResultPage() {
       console.error('Regenerate error:', error)
     } finally {
       setRegenerating(false)
+    }
+  }
+
+  const handleViewStory = () => {
+    if (storyId) {
+      router.push(`/dashboard/${storyId}`)
+    } else {
+      router.push('/dashboard')
     }
   }
 
@@ -166,10 +176,16 @@ export default function ResultPage() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Change Settings
           </Button>
-          <Button onClick={handleNewProject}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Project
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleViewStory}>
+              <Eye className="mr-2 h-4 w-4" />
+              View Story
+            </Button>
+            <Button onClick={handleNewProject}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Project
+            </Button>
+          </div>
         </div>
       )}
     </div>

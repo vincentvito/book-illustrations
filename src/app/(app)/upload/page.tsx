@@ -11,8 +11,9 @@ import { ArrowRight } from 'lucide-react'
 
 export default function UploadPage() {
   const router = useRouter()
-  const { storyText, storyFilename, setStory, reset } = useGenerationStore()
+  const { storyText, storyFilename, setStory, setStoryId, reset } = useGenerationStore()
   const [uploading, setUploading] = useState(false)
+  const [creating, setCreating] = useState(false)
 
   const handleFileAccepted = (text: string, filename: string) => {
     setStory(text, filename)
@@ -26,8 +27,35 @@ export default function UploadPage() {
     reset()
   }
 
-  const handleContinue = () => {
-    router.push('/generate')
+  const handleContinue = async () => {
+    if (!storyText) return
+    setCreating(true)
+    try {
+      const title = storyFilename
+        ? storyFilename.replace(/\.\w+$/, '')
+        : storyText.split('\n')[0].slice(0, 100) || 'Untitled Story'
+
+      const res = await fetch('/api/stories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          story_text: storyText,
+          filename: storyFilename,
+        }),
+      })
+
+      if (res.ok) {
+        const { story } = await res.json()
+        setStoryId(story.id)
+      }
+
+      router.push('/generate')
+    } catch {
+      router.push('/generate')
+    } finally {
+      setCreating(false)
+    }
   }
 
   return (
@@ -45,7 +73,7 @@ export default function UploadPage() {
             onClear={handleClear}
           />
           <div className="flex justify-end">
-            <Button onClick={handleContinue}>
+            <Button onClick={handleContinue} loading={creating}>
               Continue
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>

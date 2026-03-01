@@ -3,6 +3,7 @@ import type { StylePresetId, PalettePresetId } from '@/lib/prompt-builder'
 import type { Subject, GenerationMode, GenerationStatus } from '@/types/generation'
 
 interface GenerationState {
+  storyId: string | null
   storyText: string | null
   storyFilename: string | null
   mode: GenerationMode | null
@@ -15,6 +16,7 @@ interface GenerationState {
   generatedImages: Array<{ url: string; subjectId: number }>
   status: GenerationStatus
 
+  setStoryId: (id: string) => void
   setStory: (text: string, filename?: string) => void
   setMode: (mode: GenerationMode) => void
   setSubjects: (subjects: Subject[]) => void
@@ -30,6 +32,7 @@ interface GenerationState {
 }
 
 const initialState = {
+  storyId: null as string | null,
   storyText: null,
   storyFilename: null,
   mode: null,
@@ -46,6 +49,7 @@ const initialState = {
 export const useGenerationStore = create<GenerationState>((set) => ({
   ...initialState,
 
+  setStoryId: (id) => set({ storyId: id }),
   setStory: (text, filename) => set({ storyText: text, storyFilename: filename ?? null }),
   setMode: (mode) => set({ mode, subjects: [], selectedSubjects: [] }),
   setSubjects: (subjects) => set({ subjects }),

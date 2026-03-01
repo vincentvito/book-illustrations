@@ -35,12 +35,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No response from Claude' }, { status: 500 })
     }
 
-    const subjects = JSON.parse(textContent.text)
-    return NextResponse.json(subjects)
+    // Strip markdown code fences if Claude wraps the JSON
+    let jsonText = textContent.text.trim()
+    const fenceMatch = jsonText.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?\s*```$/)
+    if (fenceMatch) {
+      jsonText = fenceMatch[1].trim()
+    }
+
+    const result = JSON.parse(jsonText)
+
+    if (!result.subjects || !Array.isArray(result.subjects) || result.subjects.length === 0) {
+      return NextResponse.json(
+        { error: 'AI returned an unexpected format. Please try again.' },
+        { status: 502 }
+      )
+    }
+
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Claude analysis error:', error)
-    return NextResponse.json({ error: 'Failed to analyze story' }, { status: 500 })
+    const isTimeout = error instanceof Error && (
+      error.message.includes('timeout') ||
+      error.message.includes('ETIMEDOUT') ||
+      error.name === 'AbortError'
+    )
+    return NextResponse.json(
+      { error: isTimeout
+          ? 'The story analysis took too long. Try a shorter excerpt or try again.'
+          : 'Failed to analyze story. Please try again.'
+      },
+      { status: isTimeout ? 504 : 500 }
+    )
   }
 }
 
-export const maxDuration = 30
+export const maxDuration = 45
