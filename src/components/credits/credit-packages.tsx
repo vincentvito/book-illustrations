@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { CREDIT_PACKAGES } from '@/lib/stripe/config'
 import { Card } from '@/components/ui/card'
@@ -11,17 +11,18 @@ import { Star } from 'lucide-react'
 export function CreditPackages() {
   const [loading, setLoading] = useState<string | null>(null)
   const searchParams = useSearchParams()
+  const router = useRouter()
 
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
       toast.success('Credits purchased successfully!')
-      window.history.replaceState({}, '', '/credits')
+      router.replace('/credits')
     }
     if (searchParams.get('canceled') === 'true') {
       toast.info('Purchase canceled')
-      window.history.replaceState({}, '', '/credits')
+      router.replace('/credits')
     }
-  }, [searchParams])
+  }, [searchParams, router])
 
   const handlePurchase = async (packageId: string) => {
     setLoading(packageId)
