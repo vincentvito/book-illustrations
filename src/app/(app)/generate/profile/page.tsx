@@ -1,25 +1,40 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useGenerationStore } from '@/stores/generation-store'
 import { BookProfileForm, DEFAULT_PROFILE } from '@/components/generate/book-profile-form'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, ArrowLeft } from 'lucide-react'
+import { ArrowRight, ArrowLeft, Loader2 } from 'lucide-react'
 import type { BookProfile } from '@/types/book-profile'
 import { WizardStepper } from '@/components/generate/wizard-stepper'
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { storyId, storyText, bookProfile, setBookProfile } = useGenerationStore()
+  const { _hasHydrated, storyId, storyText, bookProfile, setBookProfile } = useGenerationStore()
 
   const [localProfile, setLocalProfile] = useState<BookProfile>(
     bookProfile ?? DEFAULT_PROFILE
   )
 
-  if (!storyText) {
-    router.push('/upload')
-    return null
+  // Sync local profile once store hydrates
+  useEffect(() => {
+    if (_hasHydrated && bookProfile) {
+      setLocalProfile(bookProfile)
+    }
+  }, [_hasHydrated, bookProfile])
+
+  useEffect(() => {
+    if (!_hasHydrated) return
+    if (!storyText) { router.push('/upload') }
+  }, [_hasHydrated, storyText, router])
+
+  if (!_hasHydrated || !storyText) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+      </div>
+    )
   }
 
   const handleContinue = async () => {

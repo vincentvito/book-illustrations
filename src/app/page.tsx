@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { BookOpen, Upload, Sparkles, Palette, Download, ArrowRight } from 'lucide-react'
+import { HOMEPAGE_SHOWCASE } from '@/lib/gallery/showcase-data'
+import { GalleryCard } from '@/components/marketing/gallery-card'
 
 export default function LandingPage() {
   return (
@@ -8,7 +10,7 @@ export default function LandingPage() {
       <header className="border-b border-gray-100">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2">
-            <BookOpen className="h-6 w-6 text-indigo-600" />
+            <BookOpen className="h-6 w-6 text-orange-600" />
             <span className="text-lg font-bold text-gray-900">Book Illustrator</span>
           </div>
           <div className="flex items-center gap-3">
@@ -20,7 +22,7 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/signup"
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+              className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700"
             >
               Get Started
             </Link>
@@ -33,7 +35,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-3xl">
           <h1 className="mb-6 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
             Create Beautiful Book Illustrations{' '}
-            <span className="text-indigo-600">with AI</span>
+            <span className="text-orange-600">with AI</span>
           </h1>
           <p className="mb-8 text-lg text-gray-600">
             Upload your story, let AI analyze it and suggest illustrations,
@@ -43,7 +45,7 @@ export default function LandingPage() {
           <div className="flex justify-center gap-4">
             <Link
               href="/signup"
-              className="inline-flex items-center rounded-lg bg-indigo-600 px-6 py-3 text-sm font-medium text-white hover:bg-indigo-700"
+              className="inline-flex items-center rounded-lg bg-orange-600 px-6 py-3 text-sm font-medium text-white hover:bg-orange-700"
             >
               Start for Free
               <ArrowRight className="ml-2 h-4 w-4" />
@@ -89,8 +91,8 @@ export default function LandingPage() {
               const Icon = step.icon
               return (
                 <div key={step.title} className="text-center">
-                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-100">
-                    <Icon className="h-6 w-6 text-indigo-600" />
+                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100">
+                    <Icon className="h-6 w-6 text-orange-600" />
                   </div>
                   <h3 className="mb-2 font-semibold text-gray-900">{step.title}</h3>
                   <p className="text-sm text-gray-500">{step.description}</p>
@@ -106,34 +108,25 @@ export default function LandingPage() {
         <div className="mx-auto max-w-5xl">
           <h2 className="mb-3 text-center text-3xl font-bold text-gray-900">See What&apos;s Possible</h2>
           <p className="mb-12 text-center text-gray-500">
-            AI-generated illustrations in a variety of art styles
+            Real illustrations created with our AI engine. Choose from 10 unique art styles.
           </p>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              { style: 'Watercolor', color: 'bg-sky-100', accent: 'text-sky-700', bg: 'bg-sky-50' },
-              { style: 'Oil Painting', color: 'bg-amber-100', accent: 'text-amber-700', bg: 'bg-amber-50' },
-              { style: 'Manga', color: 'bg-pink-100', accent: 'text-pink-700', bg: 'bg-pink-50' },
-              { style: 'Flat Vector', color: 'bg-indigo-100', accent: 'text-indigo-700', bg: 'bg-indigo-50' },
-              { style: 'Pencil Sketch', color: 'bg-gray-100', accent: 'text-gray-700', bg: 'bg-gray-50' },
-              { style: 'Storybook', color: 'bg-emerald-100', accent: 'text-emerald-700', bg: 'bg-emerald-50' },
-            ].map((item) => (
-              <div key={item.style} className="group overflow-hidden rounded-xl border border-gray-200 bg-white">
-                <div className={`flex aspect-[4/3] items-center justify-center ${item.bg}`}>
-                  <div className="text-center">
-                    <Palette className={`mx-auto mb-2 h-8 w-8 ${item.accent} opacity-40`} />
-                    <p className={`text-xs font-medium ${item.accent} opacity-60`}>
-                      Example coming soon
-                    </p>
-                  </div>
-                </div>
-                <div className="px-4 py-3">
-                  <span className={`inline-flex items-center rounded-full ${item.color} px-2.5 py-0.5 text-xs font-medium ${item.accent}`}>
-                    {item.style}
-                  </span>
-                </div>
-              </div>
+            {HOMEPAGE_SHOWCASE.map((item, i) => (
+              <GalleryCard key={item.id} item={item} priority={i < 3} />
             ))}
           </div>
+          <div className="mt-10 text-center">
+            <Link
+              href="/gallery"
+              className="inline-flex items-center text-sm font-medium text-orange-600 hover:text-orange-700"
+            >
+              View all styles in the full gallery
+              <ArrowRight className="ml-1.5 h-4 w-4" />
+            </Link>
+          </div>
+          <p className="mt-4 text-center text-sm text-gray-400">
+            Every image above was generated in under 60 seconds
+          </p>
         </div>
       </section>
 
@@ -179,14 +172,14 @@ export default function LandingPage() {
               <div
                 key={plan.name}
                 className={`rounded-xl border bg-white p-6 ${
-                  plan.popular ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-200'
+                  plan.popular ? 'border-orange-500 ring-2 ring-orange-200' : 'border-gray-200'
                 }`}
               >
                 {plan.popular && (
-                  <p className="mb-2 text-xs font-semibold text-indigo-600">MOST POPULAR</p>
+                  <p className="mb-2 text-xs font-semibold text-orange-600">MOST POPULAR</p>
                 )}
                 <p className="text-lg font-bold text-gray-900">{plan.name}</p>
-                <p className="text-2xl font-bold text-indigo-600">{plan.price}</p>
+                <p className="text-2xl font-bold text-orange-600">{plan.price}</p>
                 <p className="text-sm text-gray-500">{plan.per}</p>
               </div>
             ))}

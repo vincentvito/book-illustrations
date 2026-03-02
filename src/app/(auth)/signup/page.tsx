@@ -42,7 +42,7 @@ export default function SignupPage() {
   return (
     <Card>
       <div className="mb-6 text-center">
-        <BookOpen className="mx-auto mb-2 h-10 w-10 text-indigo-600" />
+        <BookOpen className="mx-auto mb-2 h-10 w-10 text-orange-600" />
         <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
         <p className="text-sm text-gray-500">Start creating book illustrations with AI</p>
       </div>
@@ -87,7 +87,7 @@ export default function SignupPage() {
 
       <p className="mt-4 text-center text-sm text-gray-500">
         Already have an account?{' '}
-        <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+        <Link href="/login" className="font-medium text-orange-600 hover:text-orange-500">
           Sign in
         </Link>
       </p>

@@ -35,7 +35,7 @@ export default function LoginPage() {
   return (
     <Card>
       <div className="mb-6 text-center">
-        <BookOpen className="mx-auto mb-2 h-10 w-10 text-indigo-600" />
+        <BookOpen className="mx-auto mb-2 h-10 w-10 text-orange-600" />
         <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
         <p className="text-sm text-gray-500">Sign in to Book Illustrator</p>
       </div>
@@ -71,7 +71,7 @@ export default function LoginPage() {
 
       <p className="mt-4 text-center text-sm text-gray-500">
         Don&apos;t have an account?{' '}
-        <Link href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
+        <Link href="/signup" className="font-medium text-orange-600 hover:text-orange-500">
           Sign up
         </Link>
       </p>

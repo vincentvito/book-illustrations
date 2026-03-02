@@ -76,7 +76,7 @@ export function GenerationProgress({ status, subjectTitle, styleName }: Generati
   return (
     <div className="flex flex-col items-center gap-4 py-12">
       {status !== 'error' && (
-        <Loader2 className="h-10 w-10 animate-spin text-indigo-600" />
+        <Loader2 className="h-10 w-10 animate-spin text-orange-600" />
       )}
 
       <p className={`text-sm font-medium ${
@@ -92,7 +92,7 @@ export function GenerationProgress({ status, subjectTitle, styleName }: Generati
       )}
 
       {styleName && status === 'generating' && (
-        <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
+        <span className="inline-flex items-center rounded-full bg-orange-50 px-2.5 py-0.5 text-xs font-medium text-orange-700">
           {styleName}
         </span>
       )}
@@ -103,7 +103,7 @@ export function GenerationProgress({ status, subjectTitle, styleName }: Generati
           <div className="w-full max-w-xs">
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
               <div
-                className="h-full rounded-full bg-indigo-500 transition-all duration-500 ease-out"
+                className="h-full rounded-full bg-orange-500 transition-all duration-500 ease-out"
                 style={{ width: `${progress}%` }}
               />
             </div>

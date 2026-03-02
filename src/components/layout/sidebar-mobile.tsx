@@ -12,7 +12,7 @@ export function MobileHeader() {
       {/* Top bar - mobile only */}
       <div className="flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4 md:hidden">
         <div className="flex items-center gap-2">
-          <BookOpen className="h-5 w-5 text-indigo-600" />
+          <BookOpen className="h-5 w-5 text-orange-600" />
           <span className="font-bold text-gray-900">Book Illustrator</span>
         </div>
         <button

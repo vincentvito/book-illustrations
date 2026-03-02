@@ -6,14 +6,14 @@ import { useGenerationStore } from '@/stores/generation-store'
 import { SubjectGrid } from '@/components/generate/subject-grid'
 import { GenerationProgress } from '@/components/generate/generation-progress'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, ArrowLeft, RefreshCw } from 'lucide-react'
+import { ArrowRight, ArrowLeft, RefreshCw, Loader2 } from 'lucide-react'
 import type { Subject } from '@/types/generation'
 import { WizardStepper } from '@/components/generate/wizard-stepper'
 
 export default function SubjectsPage() {
   const router = useRouter()
   const {
-    storyText, bookProfile, mode, characters, subjects, selectedSubjects,
+    _hasHydrated, storyText, bookProfile, mode, characters, subjects, selectedSubjects,
     setSubjects, setCharacters, selectSubject, deselectSubject, replaceSubject, setStatus, status
   } = useGenerationStore()
   const [regeneratingId, setRegeneratingId] = useState<number | null>(null)
@@ -81,6 +81,7 @@ export default function SubjectsPage() {
   }
 
   useEffect(() => {
+    if (!_hasHydrated) return
     if (!storyText || !mode) {
       router.push('/generate')
       return
@@ -88,7 +89,8 @@ export default function SubjectsPage() {
     if (subjects.length === 0) {
       fetchSubjects()
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_hasHydrated])
 
   const handleRegenerate = async (subjectId: number) => {
     if (!storyText || !mode) return
@@ -133,6 +135,14 @@ export default function SubjectsPage() {
   const canContinue = mode === 'all'
     ? selectedSubjects.length > 0
     : selectedSubjects.length === 1
+
+  if (!_hasHydrated) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+      </div>
+    )
+  }
 
   if (loading || status === 'analyzing') {
     return (

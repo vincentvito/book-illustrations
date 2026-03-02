@@ -50,7 +50,7 @@ export function GenerationCard({ generation }: { generation: GenerationRecord })
       <div className="p-3">
         <p className="text-sm font-medium text-gray-900 line-clamp-2">{generation.subject}</p>
         <div className="mt-1.5 flex flex-wrap gap-1.5">
-          <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs text-indigo-600">
+          <span className="rounded-full bg-orange-50 px-2 py-0.5 text-xs text-orange-600">
             {generation.style}
           </span>
           <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-600">

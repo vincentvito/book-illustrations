@@ -54,14 +54,14 @@ export function FileDropzone({ onFileAccepted, loading }: FileDropzoneProps) {
         {...getRootProps()}
         className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-colors ${
           isDragActive
-            ? 'border-indigo-400 bg-indigo-50'
+            ? 'border-orange-400 bg-orange-50'
             : 'border-gray-300 hover:border-gray-400'
         } ${loading ? 'pointer-events-none opacity-50' : ''}`}
       >
         <input {...getInputProps()} />
         {loading ? (
           <div className="flex flex-col items-center gap-2">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-indigo-600" />
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-orange-600" />
             <p className="text-sm text-gray-500">Parsing file...</p>
           </div>
         ) : (

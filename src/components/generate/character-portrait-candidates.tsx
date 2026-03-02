@@ -39,7 +39,7 @@ export function CharacterPortraitCandidates({
           onClick={() => onSelect(i)}
           className={`group relative aspect-[3/4] overflow-hidden rounded-lg border-2 transition-all ${
             selectedIndex === i
-              ? 'border-indigo-600 ring-2 ring-indigo-200'
+              ? 'border-orange-600 ring-2 ring-orange-200'
               : 'border-gray-200 hover:border-gray-400'
           }`}
         >
@@ -49,8 +49,8 @@ export function CharacterPortraitCandidates({
             className="h-full w-full object-cover"
           />
           {selectedIndex === i && (
-            <div className="absolute inset-0 flex items-center justify-center bg-indigo-600/20">
-              <div className="rounded-full bg-indigo-600 p-1">
+            <div className="absolute inset-0 flex items-center justify-center bg-orange-600/20">
+              <div className="rounded-full bg-orange-600 p-1">
                 <Check className="h-4 w-4 text-white" />
               </div>
             </div>

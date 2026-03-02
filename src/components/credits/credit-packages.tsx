@@ -45,17 +45,17 @@ export function CreditPackages() {
       {CREDIT_PACKAGES.map((pack) => (
         <Card
           key={pack.id}
-          className={`text-center ${pack.popular ? 'relative border-indigo-500 ring-2 ring-indigo-200' : ''}`}
+          className={`text-center ${pack.popular ? 'relative border-orange-500 ring-2 ring-orange-200' : ''}`}
         >
           {pack.popular && (
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-indigo-600 px-3 py-0.5 text-xs font-semibold text-white">
+              <span className="inline-flex items-center gap-1 rounded-full bg-orange-600 px-3 py-0.5 text-xs font-semibold text-white">
                 <Star className="h-3 w-3" /> Popular
               </span>
             </div>
           )}
           <h3 className="mb-1 text-lg font-bold text-gray-900">{pack.name}</h3>
-          <p className="mb-4 text-3xl font-bold text-indigo-600">
+          <p className="mb-4 text-3xl font-bold text-orange-600">
             ${(pack.priceInCents / 100).toFixed(2)}
           </p>
           <p className="mb-4 text-sm text-gray-500">

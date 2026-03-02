@@ -44,7 +44,7 @@ export function ModeSelector({ selected, onSelect }: ModeSelectorProps) {
             className="text-center"
           >
             <Icon className={`mx-auto mb-3 h-8 w-8 ${
-              selected === mode.id ? 'text-indigo-600' : 'text-gray-400'
+              selected === mode.id ? 'text-orange-600' : 'text-gray-400'
             }`} />
             <h3 className="mb-1 font-semibold text-gray-900">{mode.title}</h3>
             <p className="text-sm text-gray-500">{mode.description}</p>

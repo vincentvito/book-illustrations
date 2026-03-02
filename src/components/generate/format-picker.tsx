@@ -24,7 +24,7 @@ export function FormatPicker({ selected, onSelect }: FormatPickerProps) {
             <div className="mb-2 flex justify-center">
               <div
                 className={`border ${
-                  selected === format.id ? 'border-indigo-400 bg-indigo-50' : 'border-gray-300 bg-gray-50'
+                  selected === format.id ? 'border-orange-400 bg-orange-50' : 'border-gray-300 bg-gray-50'
                 }`}
                 style={{
                   width: `${Math.min(format.widthInches * 6, 60)}px`,

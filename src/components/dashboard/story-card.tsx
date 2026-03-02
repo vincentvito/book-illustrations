@@ -41,7 +41,7 @@ export function StoryCard({ story }: { story: StoryListItem }) {
 
       {/* Info */}
       <div className="p-4">
-        <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate">
+        <h3 className="font-semibold text-gray-900 group-hover:text-orange-600 transition-colors truncate">
           {story.title}
         </h3>
         <div className="mt-1.5 flex items-center gap-3 text-xs text-gray-500">

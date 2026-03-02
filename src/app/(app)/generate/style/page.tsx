@@ -1,27 +1,36 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useGenerationStore } from '@/stores/generation-store'
 import { StylePicker } from '@/components/generate/style-picker'
 import { PalettePicker } from '@/components/generate/palette-picker'
 import { FormatPicker } from '@/components/generate/format-picker'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Sparkles } from 'lucide-react'
+import { ArrowLeft, Sparkles, Loader2 } from 'lucide-react'
 import { useCredits } from '@/hooks/use-credits'
 import { WizardStepper } from '@/components/generate/wizard-stepper'
 
 export default function StylePage() {
   const router = useRouter()
   const {
-    selectedSubjects, mode, characters, approvedCharacterRefs,
+    _hasHydrated, selectedSubjects, mode, characters, approvedCharacterRefs,
     style, palette, customPalettePrompt, bookFormatId,
     setStyle, setPalette, setBookFormat,
   } = useGenerationStore()
   const { credits } = useCredits()
 
-  if (!selectedSubjects.length) {
-    router.push('/generate/subjects')
-    return null
+  useEffect(() => {
+    if (!_hasHydrated) return
+    if (!selectedSubjects.length) { router.push('/generate/subjects') }
+  }, [_hasHydrated, selectedSubjects.length, router])
+
+  if (!_hasHydrated || !selectedSubjects.length) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+      </div>
+    )
   }
 
   const creditsNeeded = mode === 'all' ? selectedSubjects.length : 1

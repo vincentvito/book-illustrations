@@ -5,6 +5,7 @@ import type { Subject, Character, CharacterReference, GenerationMode, Generation
 import type { BookProfile } from '@/types/book-profile'
 
 interface GenerationState {
+  _hasHydrated: boolean
   storyId: string | null
   storyText: string | null
   storyFilename: string | null
@@ -42,6 +43,7 @@ interface GenerationState {
 }
 
 const initialState = {
+  _hasHydrated: false,
   storyId: null as string | null,
   storyText: null,
   storyFilename: null,
@@ -108,6 +110,9 @@ export const useGenerationStore = create<GenerationState>()(
       name: 'generation-wizard',
       storage: createJSONStorage(() => sessionStorage),
       version: 1,
+      onRehydrateStorage: () => () => {
+        useGenerationStore.setState({ _hasHydrated: true })
+      },
       partialize: (state) => ({
         storyId: state.storyId,
         storyText: state.storyText,

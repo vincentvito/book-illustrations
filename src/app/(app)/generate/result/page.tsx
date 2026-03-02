@@ -1,28 +1,31 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useGenerationStore } from '@/stores/generation-store'
 import { GenerationProgress } from '@/components/generate/generation-progress'
 import { ImageResult } from '@/components/generate/image-result'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Plus, Eye } from 'lucide-react'
+import { ArrowLeft, Plus, Eye, Loader2 } from 'lucide-react'
 
 export default function ResultPage() {
   const router = useRouter()
   const {
-    storyId, bookProfile, selectedSubjects, style, palette, customPalettePrompt,
+    _hasHydrated, storyId, bookProfile, selectedSubjects, style, palette, customPalettePrompt,
     mode, bookFormatId, generatedImages, approvedCharacterRefs,
     addGeneratedImage, setStatus, status, reset,
   } = useGenerationStore()
 
-  const charRefsPayload = approvedCharacterRefs.length > 0
-    ? approvedCharacterRefs.map(r => ({
-        characterName: r.characterName,
-        referenceImageUrl: r.referenceImageUrl,
-      }))
-    : undefined
+  const charRefsPayload = useMemo(
+    () => approvedCharacterRefs.length > 0
+      ? approvedCharacterRefs.map(r => ({
+          characterName: r.characterName,
+          referenceImageUrl: r.referenceImageUrl,
+        }))
+      : undefined,
+    [approvedCharacterRefs]
+  )
 
   const [attemptedCount, setAttemptedCount] = useState(0)
   const [errorCount, setErrorCount] = useState(0)
@@ -79,8 +82,9 @@ export default function ResultPage() {
   const generateOneRef = useRef(generateOne)
   generateOneRef.current = generateOne
 
-  // Initial generation on mount
+  // Initial generation on mount (wait for hydration)
   useEffect(() => {
+    if (!_hasHydrated) return
     if (!selectedSubjects.length || !style || !palette || !bookFormatId) {
       router.push('/generate/style')
       return
@@ -90,7 +94,7 @@ export default function ResultPage() {
       generateOne(0)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [_hasHydrated])
 
   // Sequential loop: after each completion, schedule the next subject
   useEffect(() => {
@@ -164,6 +168,14 @@ export default function ResultPage() {
   const allDone = mode === 'all'
     ? attemptedCount >= selectedSubjects.length
     : generatedImages.length > 0 && !isGenerating
+
+  if (!_hasHydrated) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">

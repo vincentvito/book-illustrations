@@ -49,7 +49,7 @@ export function WizardStepper() {
               {i < steps.length - 1 && (
                 <div
                   className={`mx-1 h-0.5 flex-1 ${
-                    currentIndex > i ? 'bg-indigo-600' : 'bg-gray-200'
+                    currentIndex > i ? 'bg-orange-600' : 'bg-gray-200'
                   }`}
                 />
               )}
@@ -69,12 +69,12 @@ export function WizardStepper() {
               <div key={step.path} className="flex items-center gap-1.5">
                 {isCompleted ? (
                   <Link href={step.path} aria-label={step.label}>
-                    <div className="h-2 w-2 rounded-full bg-indigo-600" />
+                    <div className="h-2 w-2 rounded-full bg-orange-600" />
                   </Link>
                 ) : (
                   <div
                     className={`h-2 w-2 rounded-full ${
-                      isCurrent ? 'bg-indigo-600 ring-2 ring-indigo-200' : 'bg-gray-300'
+                      isCurrent ? 'bg-orange-600 ring-2 ring-orange-200' : 'bg-gray-300'
                     }`}
                   />
                 )}
@@ -108,9 +108,9 @@ function StepCircle({
       <span
         className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium ${
           isCompleted
-            ? 'bg-indigo-600 text-white'
+            ? 'bg-orange-600 text-white'
             : isCurrent
-              ? 'border-2 border-indigo-600 text-indigo-600'
+              ? 'border-2 border-orange-600 text-orange-600'
               : 'border-2 border-gray-300 text-gray-400'
         }`}
       >
@@ -118,7 +118,7 @@ function StepCircle({
       </span>
       <span
         className={`text-xs ${
-          isCompleted || isCurrent ? 'font-medium text-indigo-600' : 'text-gray-400'
+          isCompleted || isCurrent ? 'font-medium text-orange-600' : 'text-gray-400'
         }`}
       >
         {step.label}

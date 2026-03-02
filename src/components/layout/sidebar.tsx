@@ -28,7 +28,7 @@ export function Sidebar() {
     <div className="flex h-screen w-64 flex-col border-r border-gray-200 bg-white">
       {/* Logo */}
       <div className="flex h-16 items-center gap-2 border-b border-gray-200 px-5">
-        <BookOpen className="h-6 w-6 text-indigo-600" />
+        <BookOpen className="h-6 w-6 text-orange-600" />
         <span className="text-lg font-bold text-gray-900">Book Illustrator</span>
       </div>
 
@@ -63,14 +63,14 @@ export function Sidebar() {
                   href={`/dashboard/${story.id}`}
                   className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
                     isActive
-                      ? 'border-l-2 border-indigo-600 bg-indigo-50 font-medium text-indigo-700'
+                      ? 'border-l-2 border-orange-600 bg-orange-50 font-medium text-orange-700'
                       : 'text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  <FileText className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-indigo-600' : 'text-gray-400'}`} />
+                  <FileText className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-orange-600' : 'text-gray-400'}`} />
                   <span className="truncate">{story.title}</span>
                   {story.generation_count > 0 && (
-                    <span className={`ml-auto flex-shrink-0 text-xs ${isActive ? 'text-indigo-500' : 'text-gray-400'}`}>
+                    <span className={`ml-auto flex-shrink-0 text-xs ${isActive ? 'text-orange-500' : 'text-gray-400'}`}>
                       {story.generation_count}
                     </span>
                   )}
@@ -85,7 +85,7 @@ export function Sidebar() {
       <div className="border-t border-gray-200 p-4 space-y-3">
         <Link
           href="/credits"
-          className="flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-100 transition-colors"
+          className="flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1.5 text-sm font-medium text-orange-700 hover:bg-orange-100 transition-colors"
         >
           <Coins className="h-4 w-4" />
           {creditsLoading ? '...' : `${credits} credits`}

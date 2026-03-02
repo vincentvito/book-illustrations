@@ -123,7 +123,7 @@ export function BookProfileForm({ profile, onChange }: BookProfileFormProps) {
                 onClick={() => toggleMood(m.id)}
                 className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
                   selected
-                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                    ? 'border-orange-500 bg-orange-50 text-orange-700'
                     : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                 }`}
               >

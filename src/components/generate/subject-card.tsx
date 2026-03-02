@@ -19,7 +19,7 @@ export function SubjectCard({ subject, selected, onSelect, onRegenerate, regener
       <div className="mb-3 flex items-start justify-between">
         <h3 className="font-semibold text-gray-900">{subject.title}</h3>
         {selected && (
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-600">
             <Check className="h-4 w-4 text-white" />
           </span>
         )}
@@ -27,7 +27,7 @@ export function SubjectCard({ subject, selected, onSelect, onRegenerate, regener
       <p className="mb-3 text-sm text-gray-600">{subject.description}</p>
       <p className="mb-3 text-xs italic text-gray-400">{subject.storyContext}</p>
       {subject.storySection && (
-        <p className="mb-3 text-xs text-indigo-500">Section: {subject.storySection}</p>
+        <p className="mb-3 text-xs text-orange-500">Section: {subject.storySection}</p>
       )}
       <Button
         variant="outline"

@@ -1,34 +1,38 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useGenerationStore } from '@/stores/generation-store'
 import { CharacterGrid } from '@/components/generate/character-grid'
 import { CharacterLibraryModal } from '@/components/generate/character-library-modal'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, ArrowLeft, Plus, BookOpen, SkipForward } from 'lucide-react'
+import { ArrowRight, ArrowLeft, Plus, BookOpen, SkipForward, Loader2 } from 'lucide-react'
 import type { Character, CharacterReference } from '@/types/generation'
 import { WizardStepper } from '@/components/generate/wizard-stepper'
 
 export default function CharactersPage() {
   const router = useRouter()
   const {
-    characters, setCharacters,
+    _hasHydrated, characters, setCharacters,
     approvedCharacterRefs, addApprovedCharacterRef, removeApprovedCharacterRef,
     style, bookProfile, mode,
   } = useGenerationStore()
 
   const [libraryOpen, setLibraryOpen] = useState(false)
 
-  // Redirect if missing prerequisites
-  if (!mode || mode !== 'all') {
-    router.push('/generate/style')
-    return null
-  }
+  useEffect(() => {
+    if (!_hasHydrated) return
+    if (!mode || mode !== 'all' || !style) {
+      router.push('/generate/style')
+    }
+  }, [_hasHydrated, mode, style, router])
 
-  if (!style) {
-    router.push('/generate/style')
-    return null
+  if (!_hasHydrated || !mode || mode !== 'all' || !style) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+      </div>
+    )
   }
 
   const handleUpdateCharacter = (index: number, updated: Character) => {
