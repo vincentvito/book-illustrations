@@ -8,7 +8,6 @@ import {
   CHARACTER_STYLES,
   ILLUSTRATION_TYPES,
   DETAIL_LEVELS,
-  LIGHTING_MOODS,
   CULTURAL_INFLUENCES,
 } from '@/types/book-profile'
 
@@ -156,7 +155,6 @@ function buildProfilePromptBlock(profile: BookProfile): string {
   const age = profileLabel(AGE_RANGES, profile.ageRange)
   const moods = profile.moods.map((m) => profileLabel(MOOD_TONES, m)).join(', ')
   const detail = profileLabel(DETAIL_LEVELS, profile.detailLevel)
-  const lighting = profileLabel(LIGHTING_MOODS, profile.lightingMood)
 
   const lines: string[] = []
 
@@ -214,9 +212,6 @@ function buildProfilePromptBlock(profile: BookProfile): string {
   // Detail level
   lines.push(`DETAIL: ${detail} level of detail.`)
 
-  // Lighting
-  lines.push(`LIGHTING: ${lighting}.`)
-
   // Illustration type composition hints
   switch (profile.illustrationType) {
     case 'spot':
@@ -237,11 +232,6 @@ function buildProfilePromptBlock(profile: BookProfile): string {
   if (profile.culturalInfluence !== 'none') {
     const culture = profileLabel(CULTURAL_INFLUENCES, profile.culturalInfluence)
     lines.push(`CULTURAL CONTEXT: ${culture} influence — reflect in architecture, clothing, patterns, and environmental details.`)
-  }
-
-  // Visual motifs
-  if (profile.visualMotifs) {
-    lines.push(`VISUAL MOTIFS: Include these recurring elements: ${profile.visualMotifs}.`)
   }
 
   return lines.join('\n')

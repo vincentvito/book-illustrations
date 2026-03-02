@@ -113,20 +113,6 @@ export const DETAIL_LEVELS = [
 
 export type DetailLevel = (typeof DETAIL_LEVELS)[number]['id']
 
-// ── Lighting Mood ─────────────────────────────────────────────────────────
-
-export const LIGHTING_MOODS = [
-  { id: 'natural', label: 'Natural Daylight', description: 'Bright, even light' },
-  { id: 'golden', label: 'Golden Hour / Warm', description: 'Warm sunset tones' },
-  { id: 'candlelight', label: 'Candlelight / Firelight', description: 'Flickering warm glow' },
-  { id: 'moonlight', label: 'Moonlight / Night', description: 'Cool, silver tones' },
-  { id: 'dramatic', label: 'Dramatic Spotlight', description: 'High contrast, focused' },
-  { id: 'soft', label: 'Soft / Diffused', description: 'Gentle, no harsh shadows' },
-  { id: 'neon', label: 'Neon / Vibrant', description: 'Colorful, electric glow' },
-] as const
-
-export type LightingMood = (typeof LIGHTING_MOODS)[number]['id']
-
 // ── Book Profile (composite) ──────────────────────────────────────────────
 
 export interface BookProfile {
@@ -138,13 +124,11 @@ export interface BookProfile {
   era: Era
   culturalInfluence: CulturalInfluence
   detailLevel: DetailLevel
-  lightingMood: LightingMood
-  visualMotifs: string
 }
 
 // ── Smart Defaults by Genre ───────────────────────────────────────────────
 
-export const GENRE_DEFAULTS: Record<BookGenre, Omit<BookProfile, 'genre' | 'visualMotifs'>> = {
+export const GENRE_DEFAULTS: Record<BookGenre, Omit<BookProfile, 'genre'>> = {
   'children-picture-book': {
     ageRange: '3-5',
     moods: ['cheerful', 'whimsical'],
@@ -153,7 +137,6 @@ export const GENRE_DEFAULTS: Record<BookGenre, Omit<BookProfile, 'genre' | 'visu
     era: 'timeless',
     culturalInfluence: 'none',
     detailLevel: 'simple',
-    lightingMood: 'natural',
   },
   'middle-grade': {
     ageRange: '9-12',
@@ -163,7 +146,6 @@ export const GENRE_DEFAULTS: Record<BookGenre, Omit<BookProfile, 'genre' | 'visu
     era: 'auto',
     culturalInfluence: 'none',
     detailLevel: 'moderate',
-    lightingMood: 'natural',
   },
   'young-adult': {
     ageRange: '13-17',
@@ -173,7 +155,6 @@ export const GENRE_DEFAULTS: Record<BookGenre, Omit<BookProfile, 'genre' | 'visu
     era: 'auto',
     culturalInfluence: 'none',
     detailLevel: 'rich',
-    lightingMood: 'dramatic',
   },
   'adult-fiction': {
     ageRange: '18+',
@@ -183,7 +164,6 @@ export const GENRE_DEFAULTS: Record<BookGenre, Omit<BookProfile, 'genre' | 'visu
     era: 'auto',
     culturalInfluence: 'none',
     detailLevel: 'rich',
-    lightingMood: 'golden',
   },
   'poetry-literary': {
     ageRange: '18+',
@@ -193,7 +173,6 @@ export const GENRE_DEFAULTS: Record<BookGenre, Omit<BookProfile, 'genre' | 'visu
     era: 'timeless',
     culturalInfluence: 'none',
     detailLevel: 'moderate',
-    lightingMood: 'soft',
   },
   'short-story-collection': {
     ageRange: '18+',
@@ -203,7 +182,6 @@ export const GENRE_DEFAULTS: Record<BookGenre, Omit<BookProfile, 'genre' | 'visu
     era: 'auto',
     culturalInfluence: 'none',
     detailLevel: 'moderate',
-    lightingMood: 'golden',
   },
   'fantasy-scifi': {
     ageRange: '13-17',
@@ -213,7 +191,6 @@ export const GENRE_DEFAULTS: Record<BookGenre, Omit<BookProfile, 'genre' | 'visu
     era: 'auto',
     culturalInfluence: 'none',
     detailLevel: 'rich',
-    lightingMood: 'dramatic',
   },
   'horror-thriller': {
     ageRange: '18+',
@@ -223,7 +200,6 @@ export const GENRE_DEFAULTS: Record<BookGenre, Omit<BookProfile, 'genre' | 'visu
     era: 'auto',
     culturalInfluence: 'none',
     detailLevel: 'rich',
-    lightingMood: 'moonlight',
   },
   'non-fiction-educational': {
     ageRange: '9-12',
@@ -233,7 +209,6 @@ export const GENRE_DEFAULTS: Record<BookGenre, Omit<BookProfile, 'genre' | 'visu
     era: 'auto',
     culturalInfluence: 'none',
     detailLevel: 'moderate',
-    lightingMood: 'natural',
   },
   'graphic-novel': {
     ageRange: '13-17',
@@ -243,6 +218,5 @@ export const GENRE_DEFAULTS: Record<BookGenre, Omit<BookProfile, 'genre' | 'visu
     era: 'auto',
     culturalInfluence: 'none',
     detailLevel: 'rich',
-    lightingMood: 'dramatic',
   },
 }

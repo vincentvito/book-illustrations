@@ -14,8 +14,6 @@ const BookProfileSchema = z.object({
   era: z.string(),
   culturalInfluence: z.string(),
   detailLevel: z.string(),
-  lightingMood: z.string(),
-  visualMotifs: z.string(),
 }).optional()
 
 const RequestSchema = z.object({
@@ -84,4 +82,4 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export const maxDuration = 45
+export const maxDuration = 300

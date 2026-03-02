@@ -13,8 +13,6 @@ const UpdateStorySchema = z.object({
     era: z.string(),
     culturalInfluence: z.string(),
     detailLevel: z.string(),
-    lightingMood: z.string(),
-    visualMotifs: z.string(),
   }).optional(),
 })
 

@@ -2,7 +2,6 @@
 
 import { useCallback } from 'react'
 import { Card } from '@/components/ui/card'
-import { Textarea } from '@/components/ui/textarea'
 import {
   BOOK_GENRES,
   AGE_RANGES,
@@ -12,18 +11,10 @@ import {
   ERAS,
   CULTURAL_INFLUENCES,
   DETAIL_LEVELS,
-  LIGHTING_MOODS,
   GENRE_DEFAULTS,
   type BookProfile,
   type BookGenre,
-  type AgeRange,
   type MoodTone,
-  type CharacterStyle,
-  type IllustrationType,
-  type Era,
-  type CulturalInfluence,
-  type DetailLevel,
-  type LightingMood,
 } from '@/types/book-profile'
 import {
   BookOpen,
@@ -34,8 +25,6 @@ import {
   Clock,
   Globe,
   Layers,
-  Sun,
-  Sparkles,
 } from 'lucide-react'
 
 interface BookProfileFormProps {
@@ -52,8 +41,6 @@ const DEFAULT_PROFILE: BookProfile = {
   era: 'timeless',
   culturalInfluence: 'none',
   detailLevel: 'simple',
-  lightingMood: 'natural',
-  visualMotifs: '',
 }
 
 export { DEFAULT_PROFILE }
@@ -71,7 +58,6 @@ export function BookProfileForm({ profile, onChange }: BookProfileFormProps) {
         ...profile,
         genre,
         ...defaults,
-        visualMotifs: profile.visualMotifs,
       })
     },
     [profile, onChange]
@@ -238,33 +224,6 @@ export function BookProfileForm({ profile, onChange }: BookProfileFormProps) {
         </div>
       </Section>
 
-      {/* Lighting Mood */}
-      <Section icon={Sun} title="Lighting Mood">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-          {LIGHTING_MOODS.map((l) => (
-            <Card
-              key={l.id}
-              selected={profile.lightingMood === l.id}
-              hoverable
-              onClick={() => update({ lightingMood: l.id })}
-              className="!p-3 text-center"
-            >
-              <p className="text-xs font-semibold text-gray-800">{l.label}</p>
-              <p className="mt-0.5 text-[10px] text-gray-500">{l.description}</p>
-            </Card>
-          ))}
-        </div>
-      </Section>
-
-      {/* Visual Motifs */}
-      <Section icon={Sparkles} title="Visual Motifs" hint="Optional — recurring visual elements">
-        <Textarea
-          placeholder='e.g. "butterflies appearing in every scene", "recurring star patterns", "vines framing the edges"'
-          rows={2}
-          value={profile.visualMotifs}
-          onChange={(e) => update({ visualMotifs: e.target.value })}
-        />
-      </Section>
     </div>
   )
 }

@@ -19,7 +19,15 @@ const messages: Record<GenerationStatus, string> = {
   error: 'Something went wrong.',
 }
 
-const tips = [
+const analysisTips = [
+  'Reading through your story...',
+  'Identifying key characters...',
+  'Finding the most visual scenes...',
+  'Crafting detailed scene descriptions...',
+  'Selecting the best illustration moments...',
+]
+
+const generationTips = [
   'AI is composing your illustration...',
   'Applying your chosen art style...',
   'Adjusting colors to your palette...',
@@ -31,27 +39,32 @@ export function GenerationProgress({ status, subjectTitle, styleName }: Generati
   const [tipIndex, setTipIndex] = useState(0)
   const [progress, setProgress] = useState(0)
 
+  const tips = status === 'analyzing' ? analysisTips : generationTips
+
   // Rotate tips every 5 seconds
   useEffect(() => {
-    if (status !== 'generating' && status !== 'processing') return
+    if (status !== 'analyzing' && status !== 'generating' && status !== 'processing') return
+    setTipIndex(0)
     const interval = setInterval(() => {
-      setTipIndex((prev) => (prev + 1) % tips.length)
+      setTipIndex((prev) => (prev + 1) % (status === 'analyzing' ? analysisTips.length : generationTips.length))
     }, 5000)
     return () => clearInterval(interval)
   }, [status])
 
-  // Faux progress bar — fills over ~40 seconds, slowing as it approaches 90%
+  // Faux progress bar — fills gradually, slowing as it approaches 90%
   useEffect(() => {
-    if (status !== 'generating' && status !== 'processing') {
+    if (status !== 'analyzing' && status !== 'generating' && status !== 'processing') {
       setProgress(0)
       return
     }
+    setProgress(0)
+    // Slower rate for analyzing (~90s to fill) vs generating (~40s)
+    const rate = status === 'analyzing' ? 0.018 : 0.04
     const interval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 90) return prev
-        // Start fast, slow down as we approach 90%
         const remaining = 90 - prev
-        const increment = Math.max(0.5, remaining * 0.04)
+        const increment = Math.max(0.3, remaining * rate)
         return Math.min(90, prev + increment)
       })
     }, 500)
@@ -84,7 +97,7 @@ export function GenerationProgress({ status, subjectTitle, styleName }: Generati
         </span>
       )}
 
-      {(status === 'generating' || status === 'processing') && (
+      {(status === 'analyzing' || status === 'generating' || status === 'processing') && (
         <>
           {/* Progress bar */}
           <div className="w-full max-w-xs">

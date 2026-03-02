@@ -26,11 +26,15 @@ export default function SubjectsPage() {
     setStatus('analyzing')
     setError(null)
 
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 310_000)
+
     try {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ storyText, mode, bookProfile: bookProfile ?? undefined }),
+        signal: controller.signal,
       })
 
       if (!res.ok) {
@@ -64,9 +68,14 @@ export default function SubjectsPage() {
       }
     } catch (error) {
       console.error('Analysis error:', error)
-      setError('Connection error. Check your internet and try again.')
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        setError('The analysis timed out. Your story might be very long — try again or shorten it.')
+      } else {
+        setError('Connection error. Check your internet and try again.')
+      }
       setStatus('error')
     } finally {
+      clearTimeout(timeoutId)
       setLoading(false)
     }
   }
@@ -132,7 +141,11 @@ export default function SubjectsPage() {
 
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Suggested Subjects</h1>
-          <p className="text-gray-500">AI is reading your story...</p>
+          <p className="text-gray-500">
+            {storyText && storyText.length > 20_000
+              ? 'AI is reading your story — this may take up to a minute for longer texts...'
+              : 'AI is reading your story...'}
+          </p>
         </div>
         <GenerationProgress status="analyzing" />
       </div>

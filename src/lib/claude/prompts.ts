@@ -97,10 +97,6 @@ function buildBookContextBlock(profile: BookProfile): string {
     lines.push(`- Cultural influence: ${culture} — reflect this in architecture, clothing, patterns, and environment details`)
   }
 
-  if (profile.visualMotifs) {
-    lines.push(`- Visual motifs to include: ${profile.visualMotifs}`)
-  }
-
   lines.push(`- Content guidelines: ${contentGuidelines}`)
 
   return lines.join('\n')
