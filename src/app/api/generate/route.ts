@@ -134,6 +134,11 @@ export async function POST(req: NextRequest) {
       imageUrl = result.imageUrl
     }
 
+    if (req.signal.aborted) {
+      await deductCredit(supabase, user.id, -1, 'Refund: client disconnected')
+      return NextResponse.json({ error: 'Client disconnected' }, { status: 499 })
+    }
+
     await supabase.from('generations').insert({
       user_id: user.id,
       mode,

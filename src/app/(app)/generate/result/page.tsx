@@ -30,16 +30,24 @@ export default function ResultPage() {
   const [attemptedCount, setAttemptedCount] = useState(0)
   const [errorCount, setErrorCount] = useState(0)
   const [regenerating, setRegenerating] = useState(false)
+  const [stopped, setStopped] = useState(false)
 
   const inFlightRef = useRef<Set<number>>(new Set())
+  const abortControllerRef = useRef<AbortController | null>(null)
+  const stoppedRef = useRef(false)
 
   const generateOne = useCallback(async (subjectIndex: number) => {
     if (inFlightRef.current.has(subjectIndex)) return
+    if (stoppedRef.current) return
 
     const subject = selectedSubjects[subjectIndex]
     if (!subject || !style || !palette || !bookFormatId) return
 
     inFlightRef.current.add(subjectIndex)
+
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
     setStatus('generating')
 
     try {
@@ -59,6 +67,7 @@ export default function ResultPage() {
           characterReferences: charRefsPayload,
           subjectCharacters: subject.characters,
         }),
+        signal: controller.signal,
       })
 
       const data = await res.json()
@@ -69,18 +78,34 @@ export default function ResultPage() {
         toast.error(`Failed to generate illustration ${subjectIndex + 1}`)
         setErrorCount(prev => prev + 1)
       }
-    } catch {
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return
+      }
       toast.error(`Generation error for illustration ${subjectIndex + 1}`)
       setErrorCount(prev => prev + 1)
     } finally {
       inFlightRef.current.delete(subjectIndex)
-      setAttemptedCount(subjectIndex + 1)
-      setStatus('completed')
+      abortControllerRef.current = null
+      if (!stoppedRef.current) {
+        setAttemptedCount(subjectIndex + 1)
+        setStatus('completed')
+      }
     }
   }, [selectedSubjects, style, palette, customPalettePrompt, mode, bookFormatId, storyId, bookProfile, charRefsPayload, addGeneratedImage, setStatus])
 
   const generateOneRef = useRef(generateOne)
   generateOneRef.current = generateOne
+
+  const handleStop = useCallback(() => {
+    stoppedRef.current = true
+    setStopped(true)
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    setStatus('completed')
+    toast.info('Generation stopped. Your completed illustrations are saved.')
+  }, [setStatus])
 
   // Initial generation on mount (wait for hydration)
   useEffect(() => {
@@ -89,6 +114,9 @@ export default function ResultPage() {
       router.push('/generate/style')
       return
     }
+
+    stoppedRef.current = false
+    setStopped(false)
 
     if (attemptedCount === 0 && !inFlightRef.current.has(0)) {
       generateOne(0)
@@ -101,7 +129,8 @@ export default function ResultPage() {
     if (
       mode !== 'all' ||
       status !== 'completed' ||
-      attemptedCount >= selectedSubjects.length
+      attemptedCount >= selectedSubjects.length ||
+      stoppedRef.current
     ) {
       return
     }
@@ -166,7 +195,7 @@ export default function ResultPage() {
 
   const isGenerating = status === 'generating' || status === 'processing'
   const allDone = mode === 'all'
-    ? attemptedCount >= selectedSubjects.length
+    ? attemptedCount >= selectedSubjects.length || stopped
     : generatedImages.length > 0 && !isGenerating
 
   if (!_hasHydrated) {
@@ -195,6 +224,7 @@ export default function ResultPage() {
           status={status}
           subjectTitle={selectedSubjects[attemptedCount]?.title}
           styleName={style ?? undefined}
+          onStop={handleStop}
         />
       )}
 
@@ -223,6 +253,7 @@ export default function ResultPage() {
           status={status}
           subjectTitle={selectedSubjects[attemptedCount]?.title}
           styleName={style ?? undefined}
+          onStop={handleStop}
         />
       )}
 

@@ -32,7 +32,7 @@ export function CreditPackages() {
         body: JSON.stringify({ packageId }),
       })
       const { url } = await res.json()
-      if (url) window.location.href = url
+      if (url && typeof window !== 'undefined') window.location.href = url
     } catch {
       toast.error('Failed to start checkout. Please try again.')
     } finally {

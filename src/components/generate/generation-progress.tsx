@@ -1,13 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Square } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import type { GenerationStatus } from '@/types/generation'
 
 interface GenerationProgressProps {
   status: GenerationStatus
   subjectTitle?: string
   styleName?: string
+  onStop?: () => void
 }
 
 const messages: Record<GenerationStatus, string> = {
@@ -35,7 +37,7 @@ const generationTips = [
   'Balancing composition and layout...',
 ]
 
-export function GenerationProgress({ status, subjectTitle, styleName }: GenerationProgressProps) {
+export function GenerationProgress({ status, subjectTitle, styleName, onStop }: GenerationProgressProps) {
   const [tipIndex, setTipIndex] = useState(0)
   const [progress, setProgress] = useState(0)
 
@@ -113,6 +115,19 @@ export function GenerationProgress({ status, subjectTitle, styleName }: Generati
           <p className="h-5 text-xs text-gray-400 transition-opacity duration-300">
             {tips[tipIndex]}
           </p>
+
+          {/* Stop button */}
+          {onStop && (status === 'generating' || status === 'processing') && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onStop}
+              className="mt-2"
+            >
+              <Square className="mr-1.5 h-3 w-3 fill-current" />
+              Stop Generation
+            </Button>
+          )}
         </>
       )}
     </div>

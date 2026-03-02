@@ -12,7 +12,9 @@ export function Navbar() {
   const handleLogout = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
-    window.location.href = '/login'
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login'
+    }
   }
 
   return (
