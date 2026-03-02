@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateImage } from '@/lib/replicate/nano-banana'
-import { buildNanoBananaPrompt, STYLE_PRESETS, PALETTE_PRESETS } from '@/lib/prompt-builder'
+import { generateWithCharacters } from '@/lib/replicate/flux2-pro'
+import { buildNanoBananaPrompt, buildFlux2ScenePrompt } from '@/lib/prompt-builder'
 import type { StylePresetId, PalettePresetId } from '@/lib/prompt-builder'
 import { BOOK_FORMATS } from '@/lib/image/formats'
 import { findClosestAspectRatio } from '@/lib/image/aspect-ratio'
@@ -22,6 +23,11 @@ const BookProfileSchema = z.object({
   visualMotifs: z.string(),
 }).optional()
 
+const CharacterRefSchema = z.object({
+  characterName: z.string(),
+  referenceImageUrl: z.string().url(),
+})
+
 const GenerateSchema = z.object({
   subject: z.string().min(10),
   style: z.string(),
@@ -32,6 +38,8 @@ const GenerateSchema = z.object({
   resolution: z.enum(['1K', '2K', '4K']).default('2K'),
   storyId: z.string().uuid().optional(),
   bookProfile: BookProfileSchema,
+  characterReferences: z.array(CharacterRefSchema).optional(),
+  subjectCharacters: z.array(z.string()).optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -45,7 +53,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  const { subject, style, palette, customPalettePrompt, mode, bookFormatId, resolution, storyId, bookProfile: bookProfileData } = parsed.data
+  const {
+    subject, style, palette, customPalettePrompt, mode, bookFormatId,
+    resolution, storyId, bookProfile: bookProfileData,
+    characterReferences, subjectCharacters,
+  } = parsed.data
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -62,15 +74,40 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid book format' }, { status: 400 })
   }
 
-  const prompt = buildNanoBananaPrompt({
-    subject,
-    style: style as StylePresetId,
-    palette: palette as PalettePresetId | 'custom',
-    customPalettePrompt,
-    mode,
-    bookFormat,
-    bookProfile: bookProfileData as BookProfile | undefined,
-  })
+  const bookProfile = bookProfileData as BookProfile | undefined
+
+  // Determine which character references to use for this specific subject
+  const relevantRefs = characterReferences && subjectCharacters
+    ? characterReferences.filter(ref =>
+        subjectCharacters.includes(ref.characterName)
+      )
+    : characterReferences ?? []
+
+  const useFlux2 = relevantRefs.length > 0
+
+  let prompt: string
+  if (useFlux2) {
+    prompt = buildFlux2ScenePrompt({
+      subject,
+      style: style as StylePresetId,
+      palette: palette as PalettePresetId | 'custom',
+      customPalettePrompt,
+      mode,
+      bookFormat,
+      bookProfile,
+      characterNames: relevantRefs.map(r => r.characterName),
+    })
+  } else {
+    prompt = buildNanoBananaPrompt({
+      subject,
+      style: style as StylePresetId,
+      palette: palette as PalettePresetId | 'custom',
+      customPalettePrompt,
+      mode,
+      bookFormat,
+      bookProfile,
+    })
+  }
 
   const arInfo = findClosestAspectRatio(bookFormat.aspectRatio)
 
@@ -80,11 +117,24 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await generateImage({
-      prompt,
-      aspect_ratio: arInfo.id,
-      resolution,
-    })
+    let imageUrl: string
+
+    if (useFlux2) {
+      const result = await generateWithCharacters({
+        prompt,
+        characterImageUrls: relevantRefs.map(r => r.referenceImageUrl),
+        width: bookFormat.widthPx,
+        height: bookFormat.heightPx,
+      })
+      imageUrl = result.imageUrl
+    } else {
+      const result = await generateImage({
+        prompt,
+        aspect_ratio: arInfo.id,
+        resolution,
+      })
+      imageUrl = result.imageUrl
+    }
 
     await supabase.from('generations').insert({
       user_id: user.id,
@@ -94,13 +144,12 @@ export async function POST(req: NextRequest) {
       book_format: bookFormatId,
       subject,
       prompt_used: prompt,
-      replicate_prediction_id: result.predictionId,
       aspect_ratio: arInfo.id,
       resolution,
       credits_used: 1,
       status: 'completed',
       story_id: storyId ?? null,
-      image_url: result.imageUrl,
+      image_url: imageUrl,
     })
 
     if (storyId) {
@@ -110,7 +159,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({
-      imageUrl: result.imageUrl,
+      imageUrl,
       aspectRatio: arInfo.id,
       bookFormatId,
       prompt,
@@ -123,4 +172,4 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export const maxDuration = 60
+export const maxDuration = 120

@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { toast } from 'sonner'
 import { CREDIT_PACKAGES } from '@/lib/stripe/config'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -8,6 +10,18 @@ import { Star } from 'lucide-react'
 
 export function CreditPackages() {
   const [loading, setLoading] = useState<string | null>(null)
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    if (searchParams.get('success') === 'true') {
+      toast.success('Credits purchased successfully!')
+      window.history.replaceState({}, '', '/credits')
+    }
+    if (searchParams.get('canceled') === 'true') {
+      toast.info('Purchase canceled')
+      window.history.replaceState({}, '', '/credits')
+    }
+  }, [searchParams])
 
   const handlePurchase = async (packageId: string) => {
     setLoading(packageId)
@@ -19,8 +33,8 @@ export function CreditPackages() {
       })
       const { url } = await res.json()
       if (url) window.location.href = url
-    } catch (error) {
-      console.error('Checkout error:', error)
+    } catch {
+      toast.error('Failed to start checkout. Please try again.')
     } finally {
       setLoading(null)
     }

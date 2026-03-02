@@ -8,6 +8,7 @@ import { StoryPreview } from '@/components/upload/story-preview'
 import { Button } from '@/components/ui/button'
 import { useGenerationStore } from '@/stores/generation-store'
 import { ArrowRight } from 'lucide-react'
+import { WizardStepper } from '@/components/generate/wizard-stepper'
 
 export default function UploadPage() {
   const router = useRouter()
@@ -60,6 +61,8 @@ export default function UploadPage() {
 
   return (
     <div className="space-y-8">
+      <WizardStepper />
+
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Upload Your Story</h1>
         <p className="text-gray-500">Upload a file or paste your story text to get started</p>

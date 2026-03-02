@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { GenerationGrid } from '@/components/dashboard/generation-grid'
@@ -50,8 +51,10 @@ export default function StoryDetailPage() {
     setDeleting(true)
     try {
       await fetch(`/api/stories/${storyId}`, { method: 'DELETE' })
+      toast.success('Story deleted')
       router.push('/dashboard')
     } catch {
+      toast.error('Failed to delete story')
       setDeleting(false)
     }
   }

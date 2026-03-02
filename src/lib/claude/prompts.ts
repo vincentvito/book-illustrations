@@ -186,8 +186,8 @@ GUIDELINES FOR SCENE SELECTION:
 
 GUIDELINES FOR DESCRIPTIONS:
 - Write 4-6 detailed sentences optimized as an image generation prompt
-- Describe the specific physical appearance of each character consistently across all scenes (same hair, clothing, features every time)
-- Include: character pose/expression, environment/setting details, lighting/atmosphere, spatial depth (foreground/midground/background)
+- Focus on the SCENE, ENVIRONMENT, and CHARACTER ACTIONS — do NOT repeat the character's physical appearance in the description (that will be handled by reference images)
+- Instead, describe: character pose/expression/action, environment/setting details, lighting/atmosphere, spatial depth (foreground/midground/background)
 - Do NOT mention art style, color palette, or medium — these are controlled separately
 - Focus on concrete visual details, not narrative interpretation
 
@@ -210,7 +210,8 @@ Respond ONLY with valid JSON in this exact format:
     {
       "id": 1,
       "title": "Short descriptive title",
-      "description": "4-6 sentence visual description for image generation. Reference characters by their exact appearance defined above. Include pose, expression, setting, lighting, and spatial composition. No style or color references.",
+      "description": "4-6 sentence visual description for image generation. Focus on scene, actions, environment, lighting, and spatial composition. Do NOT describe character appearance (that comes from reference images). No style or color references.",
+      "characters": ["Character name 1", "Character name 2"],
       "storyContext": "Why this moment was chosen and what it represents in the narrative arc",
       "storySection": "First few words of the sentence in the story where this scene occurs"
     }

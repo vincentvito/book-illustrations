@@ -247,7 +247,112 @@ function buildProfilePromptBlock(profile: BookProfile): string {
   return lines.join('\n')
 }
 
-// ── Main export ───────────────────────────────────────────────────────────
+// ── Character portrait prompt ─────────────────────────────────────────────
+
+export interface CharacterPortraitOptions {
+  characterName: string
+  appearance: string
+  style: StylePresetId
+  bookProfile?: BookProfile
+}
+
+export function buildCharacterPortraitPrompt(options: CharacterPortraitOptions): string {
+  const { characterName, appearance, style, bookProfile } = options
+  const stylePrompt = STYLE_PRESETS[style].prompt
+
+  const parts = [
+    `Full body character portrait of ${characterName}: ${appearance}.`,
+    '',
+    'COMPOSITION: Single character standing in a 3/4 view against a simple, clean, neutral background.',
+    'The character should be clearly visible from head to toe with good lighting on the face and body.',
+    'No other characters, no complex backgrounds, no text.',
+    '',
+    `STYLE: ${stylePrompt}`,
+  ]
+
+  if (bookProfile) {
+    const profileBlock = buildProfilePromptBlock(bookProfile)
+    parts.push('', profileBlock)
+  }
+
+  parts.push('', 'High quality character reference illustration, clear details, professional quality.')
+
+  return parts.join('\n').trim()
+}
+
+// ── FLUX.2 scene prompt with character references ─────────────────────────
+
+export interface Flux2SceneOptions {
+  subject: string
+  style: StylePresetId
+  palette: PalettePresetId | 'custom'
+  customPalettePrompt?: string
+  mode: 'cover' | 'single' | 'all'
+  bookFormat: BookFormat
+  bookProfile?: BookProfile
+  characterNames: string[]
+}
+
+export function buildFlux2ScenePrompt(options: Flux2SceneOptions): string {
+  const { subject, style, palette, customPalettePrompt, mode, bookFormat, bookProfile, characterNames } = options
+
+  const stylePrompt = STYLE_PRESETS[style].prompt
+  const palettePrompt = palette === 'custom'
+    ? (customPalettePrompt ?? '')
+    : PALETTE_PRESETS[palette].prompt
+  const paletteColors = palette !== 'custom' ? PALETTE_PRESETS[palette].colors : undefined
+
+  // Build character reference instructions
+  const characterRefs = characterNames.map((name, i) => {
+    const imageNum = i + 1
+    return `${name} (the character shown in input image ${imageNum})`
+  })
+
+  const subjectsJson = characterNames.map((name, i) => ({
+    description: `${name} (from image ${i + 1})`,
+  }))
+
+  const isPortrait = bookFormat.aspectRatio < 0.95
+  const isLandscape = bookFormat.aspectRatio > 1.05
+  let compositionHint = 'balanced composition'
+  if (mode === 'cover') {
+    compositionHint = 'book cover composition, main subject in center and lower two-thirds, upper 25% clear for title'
+  } else if (isPortrait) {
+    compositionHint = 'vertical/portrait format, centered subject'
+  } else if (isLandscape) {
+    compositionHint = 'horizontal/landscape format, spread across width'
+  }
+
+  const profileBlock = bookProfile ? buildProfilePromptBlock(bookProfile) : ''
+
+  // Use FLUX.2 structured JSON prompting
+  const structured = {
+    scene: subject,
+    subjects: subjectsJson,
+    style: stylePrompt,
+    ...(paletteColors ? { color_palette: paletteColors } : {}),
+    lighting: profileBlock ? undefined : 'professional book illustration lighting',
+  }
+
+  const parts = [
+    JSON.stringify(structured, null, 2),
+    '',
+    `IMPORTANT: The characters in this scene are provided as reference images. ${characterRefs.join('. ')}. Maintain their exact appearance — same face, hair, clothing, and body type as shown in the reference images.`,
+    '',
+    `COLOR PALETTE: ${palettePrompt}`,
+    `COMPOSITION: ${compositionHint}`,
+  ]
+
+  if (profileBlock) {
+    parts.push('', profileBlock)
+  }
+
+  parts.push('', 'High quality, detailed book illustration, professional publishing quality.')
+
+  return parts.join('\n').trim()
+}
+
+// ── Nano-banana prompt (text-to-image, no references) ─────────────────────
 
 export function buildNanoBananaPrompt(options: PromptOptions): string {
   const { subject, style, palette, customPalettePrompt, mode, bookFormat, bookProfile } = options

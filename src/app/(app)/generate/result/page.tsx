@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { useGenerationStore } from '@/stores/generation-store'
 import { GenerationProgress } from '@/components/generate/generation-progress'
 import { ImageResult } from '@/components/generate/image-result'
@@ -12,9 +13,16 @@ export default function ResultPage() {
   const router = useRouter()
   const {
     storyId, bookProfile, selectedSubjects, style, palette, customPalettePrompt,
-    mode, bookFormatId, generatedImages,
+    mode, bookFormatId, generatedImages, approvedCharacterRefs,
     addGeneratedImage, setStatus, status, reset,
   } = useGenerationStore()
+
+  const charRefsPayload = approvedCharacterRefs.length > 0
+    ? approvedCharacterRefs.map(r => ({
+        characterName: r.characterName,
+        referenceImageUrl: r.referenceImageUrl,
+      }))
+    : undefined
 
   const [attemptedCount, setAttemptedCount] = useState(0)
   const [errorCount, setErrorCount] = useState(0)
@@ -45,6 +53,8 @@ export default function ResultPage() {
           resolution: '2K',
           storyId: storyId ?? undefined,
           bookProfile: bookProfile ?? undefined,
+          characterReferences: charRefsPayload,
+          subjectCharacters: subject.characters,
         }),
       })
 
@@ -53,18 +63,18 @@ export default function ResultPage() {
       if (res.ok && data.imageUrl) {
         addGeneratedImage(data.imageUrl, subject.id)
       } else {
-        console.error('Generation failed for subject', subjectIndex, ':', data.error)
+        toast.error(`Failed to generate illustration ${subjectIndex + 1}`)
         setErrorCount(prev => prev + 1)
       }
-    } catch (error) {
-      console.error('Generation error for subject', subjectIndex, ':', error)
+    } catch {
+      toast.error(`Generation error for illustration ${subjectIndex + 1}`)
       setErrorCount(prev => prev + 1)
     } finally {
       inFlightRef.current.delete(subjectIndex)
       setAttemptedCount(subjectIndex + 1)
       setStatus('completed')
     }
-  }, [selectedSubjects, style, palette, customPalettePrompt, mode, bookFormatId, storyId, bookProfile, addGeneratedImage, setStatus])
+  }, [selectedSubjects, style, palette, customPalettePrompt, mode, bookFormatId, storyId, bookProfile, charRefsPayload, addGeneratedImage, setStatus])
 
   const generateOneRef = useRef(generateOne)
   generateOneRef.current = generateOne
@@ -118,15 +128,20 @@ export default function ResultPage() {
           resolution: '2K',
           storyId: storyId ?? undefined,
           bookProfile: bookProfile ?? undefined,
+          characterReferences: charRefsPayload,
+          subjectCharacters: lastSubject.characters,
         }),
       })
 
       const data = await res.json()
       if (res.ok && data.imageUrl) {
         addGeneratedImage(data.imageUrl, lastSubject.id)
+        toast.success('Illustration regenerated!')
+      } else {
+        toast.error('Regeneration failed. Please try again.')
       }
-    } catch (error) {
-      console.error('Regenerate error:', error)
+    } catch {
+      toast.error('Regeneration failed. Please try again.')
     } finally {
       setRegenerating(false)
     }
@@ -164,7 +179,11 @@ export default function ResultPage() {
       </div>
 
       {isGenerating && generatedImages.length === 0 && (
-        <GenerationProgress status={status} />
+        <GenerationProgress
+          status={status}
+          subjectTitle={selectedSubjects[attemptedCount]?.title}
+          styleName={style ?? undefined}
+        />
       )}
 
       {generatedImages.length > 0 && (
@@ -188,7 +207,11 @@ export default function ResultPage() {
       )}
 
       {isGenerating && generatedImages.length > 0 && (
-        <GenerationProgress status={status} />
+        <GenerationProgress
+          status={status}
+          subjectTitle={selectedSubjects[attemptedCount]?.title}
+          styleName={style ?? undefined}
+        />
       )}
 
       {allDone && errorCount > 0 && (

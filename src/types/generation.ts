@@ -3,12 +3,20 @@ export interface Character {
   appearance: string
 }
 
+export interface CharacterReference {
+  id: string
+  characterName: string
+  appearanceDescription: string
+  referenceImageUrl: string
+}
+
 export interface Subject {
   id: number
   title: string
   description: string
   storyContext: string
   storySection?: string
+  characters?: string[]
 }
 
 export interface AnalysisResponse {

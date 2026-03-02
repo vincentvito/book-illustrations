@@ -8,11 +8,12 @@ import { FormatPicker } from '@/components/generate/format-picker'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Sparkles } from 'lucide-react'
 import { useCredits } from '@/hooks/use-credits'
+import { WizardStepper } from '@/components/generate/wizard-stepper'
 
 export default function StylePage() {
   const router = useRouter()
   const {
-    selectedSubjects, mode,
+    selectedSubjects, mode, characters, approvedCharacterRefs,
     style, palette, customPalettePrompt, bookFormatId,
     setStyle, setPalette, setBookFormat,
   } = useGenerationStore()
@@ -28,6 +29,8 @@ export default function StylePage() {
 
   return (
     <div className="space-y-8">
+      <WizardStepper />
+
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Customize Your Illustration</h1>
         <p className="text-gray-500">Choose style, colors, and book format</p>
@@ -43,7 +46,15 @@ export default function StylePage() {
       </div>
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={() => router.push('/generate/subjects')}>
+        <Button
+          variant="outline"
+          onClick={() => {
+            const backPage = mode === 'all' && characters.length > 0
+              ? '/generate/characters'
+              : '/generate/subjects'
+            router.push(backPage)
+          }}
+        >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>

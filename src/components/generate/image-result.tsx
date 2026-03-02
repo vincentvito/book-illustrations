@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Download, RefreshCw } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 
 interface ImageResultProps {
@@ -32,8 +33,9 @@ export function ImageResult({ imageUrl, bookFormatId, onRegenerate, regenerating
       a.download = `illustration-${bookFormatId}.png`
       a.click()
       URL.revokeObjectURL(url)
-    } catch (error) {
-      console.error('Download error:', error)
+      toast.success('Illustration downloaded!')
+    } catch {
+      toast.error('Download failed. Please try again.')
     } finally {
       setDownloading(false)
     }

@@ -7,6 +7,7 @@ import { BookProfileForm, DEFAULT_PROFILE } from '@/components/generate/book-pro
 import { Button } from '@/components/ui/button'
 import { ArrowRight, ArrowLeft } from 'lucide-react'
 import type { BookProfile } from '@/types/book-profile'
+import { WizardStepper } from '@/components/generate/wizard-stepper'
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -42,6 +43,8 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-8">
+      <WizardStepper />
+
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Book Profile</h1>
         <p className="text-gray-500">

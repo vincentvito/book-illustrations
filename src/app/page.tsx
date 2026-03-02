@@ -101,8 +101,44 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features */}
+      {/* Example Gallery */}
       <section className="px-4 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="mb-3 text-center text-3xl font-bold text-gray-900">See What&apos;s Possible</h2>
+          <p className="mb-12 text-center text-gray-500">
+            AI-generated illustrations in a variety of art styles
+          </p>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { style: 'Watercolor', color: 'bg-sky-100', accent: 'text-sky-700', bg: 'bg-sky-50' },
+              { style: 'Oil Painting', color: 'bg-amber-100', accent: 'text-amber-700', bg: 'bg-amber-50' },
+              { style: 'Manga', color: 'bg-pink-100', accent: 'text-pink-700', bg: 'bg-pink-50' },
+              { style: 'Flat Vector', color: 'bg-indigo-100', accent: 'text-indigo-700', bg: 'bg-indigo-50' },
+              { style: 'Pencil Sketch', color: 'bg-gray-100', accent: 'text-gray-700', bg: 'bg-gray-50' },
+              { style: 'Storybook', color: 'bg-emerald-100', accent: 'text-emerald-700', bg: 'bg-emerald-50' },
+            ].map((item) => (
+              <div key={item.style} className="group overflow-hidden rounded-xl border border-gray-200 bg-white">
+                <div className={`flex aspect-[4/3] items-center justify-center ${item.bg}`}>
+                  <div className="text-center">
+                    <Palette className={`mx-auto mb-2 h-8 w-8 ${item.accent} opacity-40`} />
+                    <p className={`text-xs font-medium ${item.accent} opacity-60`}>
+                      Example coming soon
+                    </p>
+                  </div>
+                </div>
+                <div className="px-4 py-3">
+                  <span className={`inline-flex items-center rounded-full ${item.color} px-2.5 py-0.5 text-xs font-medium ${item.accent}`}>
+                    {item.style}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="border-t border-gray-100 px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <h2 className="mb-12 text-center text-3xl font-bold text-gray-900">Three Generation Modes</h2>
           <div className="grid gap-6 sm:grid-cols-3">

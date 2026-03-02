@@ -8,11 +8,12 @@ import { GenerationProgress } from '@/components/generate/generation-progress'
 import { Button } from '@/components/ui/button'
 import { ArrowRight, ArrowLeft, RefreshCw } from 'lucide-react'
 import type { Subject } from '@/types/generation'
+import { WizardStepper } from '@/components/generate/wizard-stepper'
 
 export default function SubjectsPage() {
   const router = useRouter()
   const {
-    storyText, bookProfile, mode, subjects, selectedSubjects,
+    storyText, bookProfile, mode, characters, subjects, selectedSubjects,
     setSubjects, setCharacters, selectSubject, deselectSubject, replaceSubject, setStatus, status
   } = useGenerationStore()
   const [regeneratingId, setRegeneratingId] = useState<number | null>(null)
@@ -127,6 +128,8 @@ export default function SubjectsPage() {
   if (loading || status === 'analyzing') {
     return (
       <div className="space-y-8">
+        <WizardStepper />
+
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Suggested Subjects</h1>
           <p className="text-gray-500">AI is reading your story...</p>
@@ -139,6 +142,8 @@ export default function SubjectsPage() {
   if (error) {
     return (
       <div className="space-y-8">
+        <WizardStepper />
+
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Suggested Subjects</h1>
           <p className="text-gray-500">Something went wrong while analyzing your story.</p>
@@ -164,6 +169,8 @@ export default function SubjectsPage() {
 
   return (
     <div className="space-y-8">
+      <WizardStepper />
+
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Choose Your Subject{mode === 'all' ? 's' : ''}</h1>
@@ -192,7 +199,15 @@ export default function SubjectsPage() {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
-        <Button disabled={!canContinue} onClick={() => router.push('/generate/style')}>
+        <Button
+          disabled={!canContinue}
+          onClick={() => {
+            const nextPage = mode === 'all' && characters.length > 0
+              ? '/generate/characters'
+              : '/generate/style'
+            router.push(nextPage)
+          }}
+        >
           Continue
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>

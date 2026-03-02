@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { CreditBalance } from '@/components/credits/credit-balance'
 import { CreditPackages } from '@/components/credits/credit-packages'
 
@@ -13,7 +14,9 @@ export default function CreditsPage() {
 
       <div>
         <h2 className="mb-4 text-lg font-semibold text-gray-900">Buy Credits</h2>
-        <CreditPackages />
+        <Suspense fallback={<div className="grid gap-4 sm:grid-cols-3">{[1,2,3].map(i => <div key={i} className="h-48 animate-pulse rounded-xl bg-gray-100" />)}</div>}>
+          <CreditPackages />
+        </Suspense>
       </div>
     </div>
   )

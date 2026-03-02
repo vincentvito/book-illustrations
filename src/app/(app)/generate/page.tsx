@@ -5,6 +5,7 @@ import { useGenerationStore } from '@/stores/generation-store'
 import { ModeSelector } from '@/components/generate/mode-selector'
 import { Button } from '@/components/ui/button'
 import { ArrowRight, ArrowLeft } from 'lucide-react'
+import { WizardStepper } from '@/components/generate/wizard-stepper'
 
 export default function GeneratePage() {
   const router = useRouter()
@@ -22,6 +23,8 @@ export default function GeneratePage() {
 
   return (
     <div className="space-y-8">
+      <WizardStepper />
+
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Choose Generation Mode</h1>
         <p className="text-gray-500">What kind of illustration do you need?</p>
