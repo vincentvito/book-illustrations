@@ -25,7 +25,7 @@ export function WizardStepper() {
 
   const steps = [...BASE_STEPS]
   if (mode === 'all' && characters.length > 0) {
-    steps.splice(4, 0, { path: '/generate/characters', label: 'Characters' })
+    steps.splice(5, 0, { path: '/generate/characters', label: 'Characters' })
   }
 
   const currentIndex = steps.findIndex((s) => s.path === pathname)

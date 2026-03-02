@@ -1,20 +1,18 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { BookOpen, LogOut, Coins } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useCredits } from '@/hooks/use-credits'
 import { Button } from '@/components/ui/button'
 
 export function Navbar() {
-  const router = useRouter()
   const { credits, loading } = useCredits()
 
   const handleLogout = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
-    router.push('/login')
+    window.location.href = '/login'
   }
 
   return (

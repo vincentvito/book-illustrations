@@ -17,7 +17,7 @@ export function Sidebar() {
   const handleLogout = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
-    router.push('/login')
+    window.location.href = '/login'
   }
 
   const handleNewStory = () => {

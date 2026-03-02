@@ -138,21 +138,21 @@ export default function CharactersPage() {
       )}
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={() => router.push('/generate/subjects')}>
+        <Button variant="outline" onClick={() => router.push('/generate/style')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
         <div className="flex gap-2">
           <Button
             variant="ghost"
-            onClick={() => router.push('/generate/style')}
+            onClick={() => router.push('/generate/result')}
           >
             <SkipForward className="mr-1.5 h-3.5 w-3.5" />
             Skip
           </Button>
           <Button
             disabled={!allApproved}
-            onClick={() => router.push('/generate/style')}
+            onClick={() => router.push('/generate/result')}
           >
             Continue
             <ArrowRight className="ml-2 h-4 w-4" />

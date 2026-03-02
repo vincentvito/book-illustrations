@@ -13,8 +13,8 @@ import { WizardStepper } from '@/components/generate/wizard-stepper'
 export default function SubjectsPage() {
   const router = useRouter()
   const {
-    _hasHydrated, storyText, bookProfile, mode, characters, subjects, selectedSubjects,
-    setSubjects, setCharacters, selectSubject, deselectSubject, replaceSubject, setStatus, status
+    _hasHydrated, storyText, bookProfile, mode, subjects, selectedSubjects,
+    characters, setSubjects, setCharacters, selectSubject, deselectSubject, replaceSubject, setStatus, status
   } = useGenerationStore()
   const [regeneratingId, setRegeneratingId] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
@@ -225,10 +225,10 @@ export default function SubjectsPage() {
         <Button
           disabled={!canContinue}
           onClick={() => {
-            const nextPage = mode === 'all' && characters.length > 0
+            const next = mode === 'all' && characters.length > 0
               ? '/generate/characters'
               : '/generate/style'
-            router.push(nextPage)
+            router.push(next)
           }}
         >
           Continue

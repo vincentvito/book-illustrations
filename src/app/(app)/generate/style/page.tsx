@@ -7,7 +7,7 @@ import { StylePicker } from '@/components/generate/style-picker'
 import { PalettePicker } from '@/components/generate/palette-picker'
 import { FormatPicker } from '@/components/generate/format-picker'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Sparkles, Loader2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Sparkles, Loader2 } from 'lucide-react'
 import { useCredits } from '@/hooks/use-credits'
 import { WizardStepper } from '@/components/generate/wizard-stepper'
 
@@ -57,23 +57,28 @@ export default function StylePage() {
       <div className="flex justify-between">
         <Button
           variant="outline"
-          onClick={() => {
-            const backPage = mode === 'all' && characters.length > 0
-              ? '/generate/characters'
-              : '/generate/subjects'
-            router.push(backPage)
-          }}
+          onClick={() => router.push('/generate/subjects')}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
-        <Button
-          disabled={!canGenerate}
-          onClick={() => router.push('/generate/result')}
-        >
-          <Sparkles className="mr-2 h-4 w-4" />
-          Generate ({creditsNeeded} credit{creditsNeeded > 1 ? 's' : ''})
-        </Button>
+        {mode === 'all' && characters.length > 0 ? (
+          <Button
+            disabled={!canGenerate}
+            onClick={() => router.push('/generate/characters')}
+          >
+            Continue
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        ) : (
+          <Button
+            disabled={!canGenerate}
+            onClick={() => router.push('/generate/result')}
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            Generate ({creditsNeeded} credit{creditsNeeded > 1 ? 's' : ''})
+          </Button>
+        )}
       </div>
     </div>
   )
