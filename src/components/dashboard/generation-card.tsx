@@ -23,7 +23,7 @@ export function GenerationCard({ generation }: { generation: GenerationRecord })
   return (
     <div className="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
       {/* Image */}
-      <div className="relative aspect-square bg-gray-100">
+      <div className="relative aspect-[4/3] bg-gray-100">
         {generation.image_url ? (
           <img
             src={generation.image_url}
