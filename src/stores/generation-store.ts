@@ -37,6 +37,7 @@ interface GenerationState {
   setStyle: (style: StylePresetId) => void
   setPalette: (palette: PalettePresetId | 'custom', customPrompt?: string) => void
   setBookFormat: (formatId: string) => void
+  renameCharacterInSubjects: (oldName: string, newName: string) => void
   addGeneratedImage: (url: string, subjectId: number) => void
   replaceGeneratedImage: (subjectId: number, newUrl: string) => void
   setStatus: (status: GenerationStatus) => void
@@ -101,6 +102,14 @@ export const useGenerationStore = create<GenerationState>()(
         customPalettePrompt: customPrompt ?? '',
       }),
       setBookFormat: (formatId) => set({ bookFormatId: formatId }),
+      renameCharacterInSubjects: (oldName, newName) => set((state) => {
+        const rename = (chars?: string[]) =>
+          chars?.map(c => c === oldName ? newName : c)
+        return {
+          subjects: state.subjects.map(s => ({ ...s, characters: rename(s.characters) })),
+          selectedSubjects: state.selectedSubjects.map(s => ({ ...s, characters: rename(s.characters) })),
+        }
+      }),
       addGeneratedImage: (url, subjectId) => set((state) => ({
         generatedImages: [...state.generatedImages, { url, subjectId }],
       })),
@@ -138,6 +147,7 @@ export const useGenerationStore = create<GenerationState>()(
         palette: state.palette,
         customPalettePrompt: state.customPalettePrompt,
         bookFormatId: state.bookFormatId,
+        generatedImages: state.generatedImages,
       }),
     }
   )

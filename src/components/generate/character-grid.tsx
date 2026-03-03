@@ -9,6 +9,7 @@ interface CharacterGridProps {
   approvedRefs: CharacterReference[]
   style: string
   bookProfile?: BookProfile
+  storyId?: string
   onUpdateCharacter: (index: number, updated: Character) => void
   onRemoveCharacter: (index: number) => void
   onApproveCharacter: (ref: CharacterReference) => void
@@ -19,6 +20,7 @@ export function CharacterGrid({
   approvedRefs,
   style,
   bookProfile,
+  storyId,
   onUpdateCharacter,
   onRemoveCharacter,
   onApproveCharacter,
@@ -34,6 +36,7 @@ export function CharacterGrid({
           )}
           style={style}
           bookProfile={bookProfile}
+          storyId={storyId}
           onUpdate={(updated) => onUpdateCharacter(i, updated)}
           onRemove={() => onRemoveCharacter(i)}
           onApprove={onApproveCharacter}

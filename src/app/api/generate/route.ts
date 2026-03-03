@@ -75,9 +75,10 @@ export async function POST(req: NextRequest) {
   const bookProfile = bookProfileData as BookProfile | undefined
 
   // Determine which character references to use for this specific subject
-  const relevantRefs = characterReferences && subjectCharacters
+  const subjectCharsLower = subjectCharacters?.map(s => s.toLowerCase())
+  const relevantRefs = characterReferences && subjectCharsLower
     ? characterReferences.filter(ref =>
-        subjectCharacters.includes(ref.characterName)
+        subjectCharsLower.includes(ref.characterName.toLowerCase())
       )
     : characterReferences ?? []
 

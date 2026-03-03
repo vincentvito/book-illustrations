@@ -224,12 +224,7 @@ export default function SubjectsPage() {
         </Button>
         <Button
           disabled={!canContinue}
-          onClick={() => {
-            const next = mode === 'all' && characters.length > 0
-              ? '/generate/characters'
-              : '/generate/style'
-            router.push(next)
-          }}
+          onClick={() => router.push('/generate/style')}
         >
           Continue
           <ArrowRight className="ml-2 h-4 w-4" />

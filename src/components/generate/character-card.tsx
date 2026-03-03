@@ -15,6 +15,7 @@ interface CharacterCardProps {
   approvedRef?: CharacterReference
   style: string
   bookProfile?: BookProfile
+  storyId?: string
   onUpdate: (updated: Character) => void
   onRemove: () => void
   onApprove: (ref: CharacterReference) => void
@@ -25,6 +26,7 @@ export function CharacterCard({
   approvedRef,
   style,
   bookProfile,
+  storyId,
   onUpdate,
   onRemove,
   onApprove,
@@ -78,6 +80,7 @@ export function CharacterCard({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          storyId,
           characterName: character.name,
           appearance: character.appearance,
           imageUrl: candidates[selectedIndex].imageUrl,

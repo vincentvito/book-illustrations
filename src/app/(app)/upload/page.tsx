@@ -8,6 +8,7 @@ import { StoryPreview } from '@/components/upload/story-preview'
 import { Button } from '@/components/ui/button'
 import { useGenerationStore } from '@/stores/generation-store'
 import { ArrowRight } from 'lucide-react'
+import { toast } from 'sonner'
 import { WizardStepper } from '@/components/generate/wizard-stepper'
 
 export default function UploadPage() {
@@ -46,14 +47,20 @@ export default function UploadPage() {
         }),
       })
 
-      if (res.ok) {
-        const { story } = await res.json()
-        setStoryId(story.id)
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        const message = (data?.error && typeof data.error === 'string')
+          ? data.error
+          : 'Failed to save story. Please try again.'
+        toast.error(message)
+        return
       }
 
+      const { story } = await res.json()
+      setStoryId(story.id)
       router.push('/generate/profile')
     } catch {
-      router.push('/generate/profile')
+      toast.error('Connection error. Please check your internet and try again.')
     } finally {
       setCreating(false)
     }

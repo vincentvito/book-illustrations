@@ -13,9 +13,9 @@ import { WizardStepper } from '@/components/generate/wizard-stepper'
 export default function CharactersPage() {
   const router = useRouter()
   const {
-    _hasHydrated, characters, setCharacters,
+    _hasHydrated, storyId, characters, setCharacters,
     approvedCharacterRefs, addApprovedCharacterRef, removeApprovedCharacterRef,
-    style, bookProfile, mode,
+    renameCharacterInSubjects, style, bookProfile, mode,
   } = useGenerationStore()
 
   const [libraryOpen, setLibraryOpen] = useState(false)
@@ -37,9 +37,13 @@ export default function CharactersPage() {
 
   const handleUpdateCharacter = (index: number, updated: Character) => {
     const next = [...characters]
-    // If name changed, remove old approved ref
-    if (next[index].name !== updated.name) {
-      removeApprovedCharacterRef(next[index].name)
+    const oldName = next[index].name
+    // If name changed, update approved refs and subject character lists
+    if (oldName !== updated.name) {
+      removeApprovedCharacterRef(oldName)
+      if (oldName && updated.name) {
+        renameCharacterInSubjects(oldName, updated.name)
+      }
     }
     next[index] = updated
     setCharacters(next)
@@ -125,6 +129,7 @@ export default function CharactersPage() {
           approvedRefs={approvedCharacterRefs}
           style={style}
           bookProfile={bookProfile ?? undefined}
+          storyId={storyId ?? undefined}
           onUpdateCharacter={handleUpdateCharacter}
           onRemoveCharacter={handleRemoveCharacter}
           onApproveCharacter={addApprovedCharacterRef}
