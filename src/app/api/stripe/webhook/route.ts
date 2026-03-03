@@ -37,12 +37,18 @@ export async function POST(req: NextRequest) {
     const credits = parseInt(session.metadata?.credits ?? '0', 10)
 
     if (userId && credits > 0) {
-      await supabaseAdmin.rpc('adjust_credits', {
+      const { error } = await supabaseAdmin.rpc('adjust_credits', {
         p_user_id: userId,
         p_amount: credits,
         p_type: 'purchase',
         p_description: `Purchased ${credits} credits (Stripe: ${session.id})`,
+        p_stripe_session_id: session.id,
       })
+
+      if (error) {
+        console.error('Failed to adjust credits for session:', session.id, error)
+        return NextResponse.json({ error: 'Credit adjustment failed' }, { status: 500 })
+      }
     }
   }
 

@@ -50,9 +50,15 @@ export default function StoryDetailPage() {
     if (!confirm('Delete this story? Generated illustrations will be kept but unlinked.')) return
     setDeleting(true)
     try {
-      await fetch(`/api/stories/${storyId}`, { method: 'DELETE' })
-      toast.success('Story deleted')
-      router.push('/dashboard')
+      const res = await fetch(`/api/stories/${storyId}`, { method: 'DELETE' })
+      if (res.ok) {
+        toast.success('Story deleted')
+        router.push('/dashboard')
+      } else {
+        const data = await res.json().catch(() => null)
+        toast.error(data?.error || 'Failed to delete story')
+        setDeleting(false)
+      }
     } catch {
       toast.error('Failed to delete story')
       setDeleting(false)

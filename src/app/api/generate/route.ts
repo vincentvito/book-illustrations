@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Client disconnected' }, { status: 499 })
     }
 
-    await supabase.from('generations').insert({
+    const { error: insertError } = await supabase.from('generations').insert({
       user_id: user.id,
       mode,
       style,
@@ -154,6 +154,10 @@ export async function POST(req: NextRequest) {
       story_id: storyId ?? null,
       image_url: imageUrl,
     })
+
+    if (insertError) {
+      console.error('Failed to persist generation:', insertError)
+    }
 
     if (storyId) {
       await supabase.from('stories')

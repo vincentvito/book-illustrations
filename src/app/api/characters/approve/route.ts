@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { validateImageUrl } from '@/lib/validate-image-url'
 import { z } from 'zod'
 
 const RequestSchema = z.object({
@@ -25,6 +26,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // Download the image from the Replicate URL
+    validateImageUrl(imageUrl)
     const imageResponse = await fetch(imageUrl)
     if (!imageResponse.ok) {
       return NextResponse.json({ error: 'Failed to download image' }, { status: 502 })

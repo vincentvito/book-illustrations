@@ -1,4 +1,5 @@
 import sharp from 'sharp'
+import { validateImageUrl } from '@/lib/validate-image-url'
 
 export interface ProcessingOptions {
   targetWidthPx: number
@@ -11,6 +12,7 @@ export async function processImage(
   imageUrl: string,
   options: ProcessingOptions
 ): Promise<Buffer> {
+  validateImageUrl(imageUrl)
   const response = await fetch(imageUrl)
   if (!response.ok) throw new Error('Failed to fetch generated image')
   const inputBuffer = Buffer.from(await response.arrayBuffer())

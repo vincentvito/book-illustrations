@@ -1,6 +1,8 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { toast } from 'sonner'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useStories } from '@/hooks/use-stories'
@@ -9,7 +11,15 @@ import { EmptyState } from '@/components/dashboard/empty-state'
 
 export default function DashboardPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { stories, loading } = useStories()
+
+  useEffect(() => {
+    if (searchParams.get('payment') === 'success') {
+      toast.success('Payment successful! Credits have been added to your account.')
+      router.replace('/dashboard', { scroll: false })
+    }
+  }, [searchParams, router])
 
   return (
     <div className="space-y-6">

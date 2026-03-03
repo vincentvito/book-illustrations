@@ -38,6 +38,7 @@ interface GenerationState {
   setPalette: (palette: PalettePresetId | 'custom', customPrompt?: string) => void
   setBookFormat: (formatId: string) => void
   addGeneratedImage: (url: string, subjectId: number) => void
+  replaceGeneratedImage: (subjectId: number, newUrl: string) => void
   setStatus: (status: GenerationStatus) => void
   reset: () => void
 }
@@ -103,8 +104,18 @@ export const useGenerationStore = create<GenerationState>()(
       addGeneratedImage: (url, subjectId) => set((state) => ({
         generatedImages: [...state.generatedImages, { url, subjectId }],
       })),
+      replaceGeneratedImage: (subjectId, newUrl) => set((state) => {
+        const images = [...state.generatedImages]
+        const index = images.findIndex(img => img.subjectId === subjectId)
+        if (index >= 0) {
+          images[index] = { url: newUrl, subjectId }
+        } else {
+          images.push({ url: newUrl, subjectId })
+        }
+        return { generatedImages: images }
+      }),
       setStatus: (status) => set({ status }),
-      reset: () => set(initialState),
+      reset: () => set({ ...initialState, _hasHydrated: true }),
     }),
     {
       name: 'generation-wizard',

@@ -20,9 +20,17 @@ export function StoryCard({ story }: { story: StoryListItem }) {
   const router = useRouter()
 
   return (
-    <div
+    <article
+      role="button"
+      tabIndex={0}
       onClick={() => router.push(`/dashboard/${story.id}`)}
-      className="group cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md"
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          router.push(`/dashboard/${story.id}`)
+        }
+      }}
+      className="group cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
     >
       {/* Thumbnail */}
       <div className="aspect-[16/9] bg-gray-100">
@@ -55,6 +63,6 @@ export function StoryCard({ story }: { story: StoryListItem }) {
           </span>
         </div>
       </div>
-    </div>
+    </article>
   )
 }

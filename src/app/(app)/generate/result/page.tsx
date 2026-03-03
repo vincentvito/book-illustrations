@@ -14,7 +14,7 @@ export default function ResultPage() {
   const {
     _hasHydrated, storyId, bookProfile, selectedSubjects, style, palette, customPalettePrompt,
     mode, bookFormatId, generatedImages, approvedCharacterRefs,
-    addGeneratedImage, setStatus, status, reset,
+    addGeneratedImage, replaceGeneratedImage, setStatus, status, reset,
   } = useGenerationStore()
 
   const charRefsPayload = useMemo(
@@ -143,16 +143,16 @@ export default function ResultPage() {
     return () => clearTimeout(timer)
   }, [mode, status, attemptedCount, selectedSubjects.length])
 
-  const handleRegenerate = async () => {
+  const handleRegenerate = async (subjectId: number) => {
     setRegenerating(true)
-    const lastSubject = selectedSubjects[generatedImages.length - 1] || selectedSubjects[0]
+    const subject = selectedSubjects.find(s => s.id === subjectId) || selectedSubjects[0]
 
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          subject: lastSubject.description,
+          subject: subject.description,
           style,
           palette,
           customPalettePrompt: palette === 'custom' ? customPalettePrompt : undefined,
@@ -162,13 +162,13 @@ export default function ResultPage() {
           storyId: storyId ?? undefined,
           bookProfile: bookProfile ?? undefined,
           characterReferences: charRefsPayload,
-          subjectCharacters: lastSubject.characters,
+          subjectCharacters: subject.characters,
         }),
       })
 
       const data = await res.json()
       if (res.ok && data.imageUrl) {
-        addGeneratedImage(data.imageUrl, lastSubject.id)
+        replaceGeneratedImage(subjectId, data.imageUrl)
         toast.success('Illustration regenerated!')
       } else {
         toast.error('Regeneration failed. Please try again.')
@@ -196,7 +196,7 @@ export default function ResultPage() {
   const isGenerating = status === 'generating' || status === 'processing'
   const allDone = mode === 'all'
     ? attemptedCount >= selectedSubjects.length || stopped
-    : generatedImages.length > 0 && !isGenerating
+    : (generatedImages.length > 0 || status === 'completed') && !isGenerating
 
   if (!_hasHydrated) {
     return (
@@ -240,7 +240,7 @@ export default function ResultPage() {
               <ImageResult
                 imageUrl={img.url}
                 bookFormatId={bookFormatId!}
-                onRegenerate={handleRegenerate}
+                onRegenerate={() => handleRegenerate(img.subjectId)}
                 regenerating={regenerating}
               />
             </div>

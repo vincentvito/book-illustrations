@@ -14,13 +14,9 @@ export function CreditPackages() {
   const router = useRouter()
 
   useEffect(() => {
-    if (searchParams.get('success') === 'true') {
-      toast.success('Credits purchased successfully!')
-      router.replace('/credits')
-    }
-    if (searchParams.get('canceled') === 'true') {
-      toast.info('Purchase canceled')
-      router.replace('/credits')
+    if (searchParams.get('payment') === 'cancelled') {
+      toast.info('Purchase cancelled')
+      router.replace('/credits', { scroll: false })
     }
   }, [searchParams, router])
 
