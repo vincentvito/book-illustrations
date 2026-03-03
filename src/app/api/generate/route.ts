@@ -3,23 +3,13 @@ import { createClient } from '@/lib/supabase/server'
 import { generateImage } from '@/lib/replicate/nano-banana'
 import { generateWithCharacters } from '@/lib/replicate/flux2-pro'
 import { buildNanoBananaPrompt, buildFlux2ScenePrompt } from '@/lib/prompt-builder'
-import type { StylePresetId, PalettePresetId } from '@/lib/prompt-builder'
 import { BOOK_FORMATS } from '@/lib/image/formats'
 import { findClosestAspectRatio } from '@/lib/image/aspect-ratio'
 import { deductCredit } from '@/lib/credits'
+import { getStyleTemplate } from '@/lib/style-library/templates'
+import { resolveBookProfile } from '@/lib/style-library/resolve-profile'
 import { z } from 'zod'
-import type { BookProfile } from '@/types/book-profile'
-
-const BookProfileSchema = z.object({
-  genre: z.string(),
-  ageRange: z.string(),
-  moods: z.array(z.string()).min(1),
-  characterStyle: z.string(),
-  illustrationType: z.string(),
-  era: z.string(),
-  culturalInfluence: z.string(),
-  detailLevel: z.string(),
-}).optional()
+import type { BookGenre, AgeRange } from '@/types/book-profile'
 
 const CharacterRefSchema = z.object({
   characterName: z.string(),
@@ -28,14 +18,13 @@ const CharacterRefSchema = z.object({
 
 const GenerateSchema = z.object({
   subject: z.string().min(10),
-  style: z.string(),
-  palette: z.string(),
-  customPalettePrompt: z.string().optional(),
+  styleTemplateId: z.string().min(1),
+  genre: z.string().optional(),
+  ageRange: z.string().optional(),
   mode: z.enum(['cover', 'single', 'all']),
   bookFormatId: z.string(),
   resolution: z.enum(['1K', '2K', '4K']).default('2K'),
   storyId: z.string().uuid().optional(),
-  bookProfile: BookProfileSchema,
   characterReferences: z.array(CharacterRefSchema).optional(),
   subjectCharacters: z.array(z.string()).optional(),
 })
@@ -52,10 +41,15 @@ export async function POST(req: NextRequest) {
   }
 
   const {
-    subject, style, palette, customPalettePrompt, mode, bookFormatId,
-    resolution, storyId, bookProfile: bookProfileData,
+    subject, styleTemplateId, genre, ageRange, mode, bookFormatId,
+    resolution, storyId,
     characterReferences, subjectCharacters,
   } = parsed.data
+
+  const template = getStyleTemplate(styleTemplateId)
+  if (!template) {
+    return NextResponse.json({ error: 'Invalid style template' }, { status: 400 })
+  }
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -72,7 +66,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid book format' }, { status: 400 })
   }
 
-  const bookProfile = bookProfileData as BookProfile | undefined
+  const bookProfile = genre && ageRange
+    ? resolveBookProfile(template, genre as BookGenre, ageRange as AgeRange)
+    : undefined
 
   // Determine which character references to use for this specific subject
   const subjectCharsLower = subjectCharacters?.map(s => s.toLowerCase())
@@ -88,9 +84,8 @@ export async function POST(req: NextRequest) {
   if (useFlux2) {
     prompt = buildFlux2ScenePrompt({
       subject,
-      style: style as StylePresetId,
-      palette: palette as PalettePresetId | 'custom',
-      customPalettePrompt,
+      style: template.stylePreset,
+      palette: template.palettePreset,
       mode,
       bookFormat,
       bookProfile,
@@ -99,9 +94,8 @@ export async function POST(req: NextRequest) {
   } else {
     prompt = buildNanoBananaPrompt({
       subject,
-      style: style as StylePresetId,
-      palette: palette as PalettePresetId | 'custom',
-      customPalettePrompt,
+      style: template.stylePreset,
+      palette: template.palettePreset,
       mode,
       bookFormat,
       bookProfile,
@@ -115,10 +109,41 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to deduct credit' }, { status: 500 })
   }
 
+  let actuallyUseFlux2 = useFlux2
+
   try {
+    // Verify reference image URLs are accessible before calling FLUX.2 Pro
+    if (useFlux2) {
+      for (const ref of relevantRefs) {
+        try {
+          const headRes = await fetch(ref.referenceImageUrl, { method: 'HEAD' })
+          if (!headRes.ok) {
+            console.error(`[generate] Reference image not accessible: ${ref.characterName} -> ${headRes.status}`)
+            actuallyUseFlux2 = false
+            break
+          }
+        } catch (e) {
+          console.error(`[generate] Reference image fetch error: ${ref.characterName}`, e)
+          actuallyUseFlux2 = false
+          break
+        }
+      }
+      if (!actuallyUseFlux2) {
+        console.warn('[generate] Falling back to nano-banana due to inaccessible reference images')
+        prompt = buildNanoBananaPrompt({
+          subject,
+          style: template.stylePreset,
+          palette: template.palettePreset,
+          mode,
+          bookFormat,
+          bookProfile,
+        })
+      }
+    }
+
     let imageUrl: string
 
-    if (useFlux2) {
+    if (actuallyUseFlux2) {
       const result = await generateWithCharacters({
         prompt,
         characterImageUrls: relevantRefs.map(r => r.referenceImageUrl),
@@ -143,8 +168,8 @@ export async function POST(req: NextRequest) {
     const { error: insertError } = await supabase.from('generations').insert({
       user_id: user.id,
       mode,
-      style,
-      palette,
+      style: template.stylePreset,
+      palette: template.palettePreset,
       book_format: bookFormatId,
       subject,
       prompt_used: prompt,
@@ -175,8 +200,9 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     await deductCredit(supabase, user.id, -1, 'Refund: generation failed')
 
-    console.error('Generation error:', error)
-    return NextResponse.json({ error: 'Image generation failed' }, { status: 500 })
+    const errMsg = error instanceof Error ? error.message : String(error)
+    console.error('[generate] error:', { error: errMsg, useFlux2: actuallyUseFlux2, refCount: relevantRefs.length })
+    return NextResponse.json({ error: `Image generation failed: ${errMsg}` }, { status: 500 })
   }
 }
 

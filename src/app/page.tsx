@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { BookOpen, Upload, Sparkles, Palette, Download, ArrowRight } from 'lucide-react'
+import { BookOpen, Upload, Sparkles, Palette, Download, ArrowRight, Users } from 'lucide-react'
 import { HOMEPAGE_SHOWCASE, SHOWCASE_ITEMS } from '@/lib/gallery/showcase-data'
 import { GalleryCard } from '@/components/marketing/gallery-card'
 
@@ -72,6 +72,11 @@ export default function LandingPage() {
 
           {/* Right: Image Collage */}
           <div className="relative hidden h-[480px] flex-1 md:block">
+            {/* Floating tag */}
+            <span className="absolute -top-2 right-4 z-10 rounded-full bg-orange-600 px-3 py-1 text-xs font-semibold text-white shadow-md">
+              Consistent Characters
+            </span>
+
             {/* Image 1 — large, back-left */}
             <div className="absolute left-0 top-0 w-[65%] rotate-[-2deg] overflow-hidden rounded-2xl shadow-xl">
               <Image
@@ -149,7 +154,7 @@ export default function LandingPage() {
       <section className="border-t border-gray-100 bg-gray-50 px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <h2 className="mb-12 text-center text-3xl font-bold text-gray-900">How It Works</h2>
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
             {[
               {
                 icon: Upload,
@@ -162,13 +167,18 @@ export default function LandingPage() {
                 description: 'AI reads your story and suggests the best scenes to illustrate.',
               },
               {
+                icon: Users,
+                title: '3. Create Characters',
+                description: 'Design consistent characters with AI portraits that stay on-model across every illustration.',
+              },
+              {
                 icon: Palette,
-                title: '3. Customize',
+                title: '4. Customize',
                 description: 'Choose from 10 art styles, 10 color palettes, and 9 book formats.',
               },
               {
                 icon: Download,
-                title: '4. Download',
+                title: '5. Download',
                 description: 'Generate and download print-ready illustrations at 300 DPI.',
               },
             ].map((step) => {

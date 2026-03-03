@@ -6,9 +6,10 @@ import { useGenerationStore, useHydrationGuard } from '@/stores/generation-store
 import { SubjectGrid } from '@/components/generate/subject-grid'
 import { GenerationProgress } from '@/components/generate/generation-progress'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, ArrowLeft, RefreshCw, Loader2 } from 'lucide-react'
+import { ArrowRight, ArrowLeft, RefreshCw, Sparkles, Loader2 } from 'lucide-react'
 import type { Subject } from '@/types/generation'
 import { WizardStepper } from '@/components/generate/wizard-stepper'
+import { useCredits } from '@/hooks/use-credits'
 
 const ANALYZE_CLIENT_TIMEOUT_MS = 250_000
 const ANALYZE_TIMEOUT_MESSAGE = 'The analysis timed out. Your story might be very long - try again or shorten it.'
@@ -36,9 +37,11 @@ export default function SubjectsPage() {
   const router = useRouter()
   const hasHydrated = useHydrationGuard()
   const {
-    storyText, bookProfile, mode, subjects, selectedSubjects,
+    storyText, styleTemplateId, genre, ageRange, mode, characters,
+    subjects, selectedSubjects,
     setSubjects, setCharacters, selectSubject, deselectSubject, replaceSubject, setStatus, status
   } = useGenerationStore()
+  const { credits } = useCredits()
   const [regeneratingId, setRegeneratingId] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -56,7 +59,13 @@ export default function SubjectsPage() {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ storyText, mode, bookProfile: bookProfile ?? undefined }),
+        body: JSON.stringify({
+          storyText,
+          mode,
+          styleTemplateId: styleTemplateId ?? undefined,
+          genre: genre ?? undefined,
+          ageRange: ageRange ?? undefined,
+        }),
         signal: controller.signal,
       })
 
@@ -114,7 +123,13 @@ export default function SubjectsPage() {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ storyText, mode, bookProfile: bookProfile ?? undefined }),
+        body: JSON.stringify({
+          storyText,
+          mode,
+          styleTemplateId: styleTemplateId ?? undefined,
+          genre: genre ?? undefined,
+          ageRange: ageRange ?? undefined,
+        }),
       })
 
       if (!res.ok) {
@@ -146,9 +161,20 @@ export default function SubjectsPage() {
     }
   }
 
+  const creditsNeeded = mode === 'all' ? selectedSubjects.length : 1
+  const hasEnoughCredits = (credits ?? 0) >= creditsNeeded
+
   const canContinue = mode === 'all'
-    ? selectedSubjects.length > 0
-    : selectedSubjects.length === 1
+    ? selectedSubjects.length > 0 && hasEnoughCredits
+    : selectedSubjects.length === 1 && hasEnoughCredits
+
+  const handleContinue = () => {
+    if (mode === 'all' && characters.length > 0) {
+      router.push('/generate/characters')
+    } else {
+      router.push('/generate/result')
+    }
+  }
 
   if (!hasHydrated) {
     return (
@@ -231,18 +257,29 @@ export default function SubjectsPage() {
         regeneratingId={regeneratingId}
       />
 
+      {selectedSubjects.length > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
+          <span className="font-medium text-amber-800">Cost: {creditsNeeded} credit{creditsNeeded > 1 ? 's' : ''}</span>
+          <span className="text-amber-600"> (you have {credits ?? 0})</span>
+        </div>
+      )}
+
       <div className="flex justify-between">
         <Button variant="outline" onClick={() => router.push('/generate')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
-        <Button
-          disabled={!canContinue}
-          onClick={() => router.push('/generate/style')}
-        >
-          Continue
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
+        {mode === 'all' && characters.length > 0 ? (
+          <Button disabled={!canContinue} onClick={handleContinue}>
+            Continue
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        ) : (
+          <Button disabled={!canContinue} onClick={handleContinue}>
+            <Sparkles className="mr-2 h-4 w-4" />
+            Generate ({creditsNeeded} credit{creditsNeeded > 1 ? 's' : ''})
+          </Button>
+        )}
       </div>
     </div>
   )

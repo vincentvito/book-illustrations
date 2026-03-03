@@ -13,8 +13,9 @@ export default function ResultPage() {
   const router = useRouter()
   const hasHydrated = useHydrationGuard()
   const {
-    storyId, bookProfile, selectedSubjects, style, palette, customPalettePrompt,
-    mode, bookFormatId, generatedImages, approvedCharacterRefs,
+    storyId, styleTemplateId, genre, ageRange,
+    selectedSubjects, mode, bookFormatId,
+    generatedImages, approvedCharacterRefs,
     addGeneratedImage, replaceGeneratedImage, setStatus, status, reset,
   } = useGenerationStore()
 
@@ -42,7 +43,7 @@ export default function ResultPage() {
     if (stoppedRef.current) return
 
     const subject = selectedSubjects[subjectIndex]
-    if (!subject || !style || !palette || !bookFormatId) return
+    if (!subject || !styleTemplateId || !bookFormatId) return
 
     inFlightRef.current.add(subjectIndex)
 
@@ -57,14 +58,13 @@ export default function ResultPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           subject: subject.description,
-          style,
-          palette,
-          customPalettePrompt: palette === 'custom' ? customPalettePrompt : undefined,
+          styleTemplateId,
+          genre: genre ?? undefined,
+          ageRange: ageRange ?? undefined,
           mode,
           bookFormatId,
           resolution: '2K',
           storyId: storyId ?? undefined,
-          bookProfile: bookProfile ?? undefined,
           characterReferences: charRefsPayload,
           subjectCharacters: subject.characters,
         }),
@@ -76,7 +76,7 @@ export default function ResultPage() {
       if (res.ok && data.imageUrl) {
         addGeneratedImage(data.imageUrl, subject.id)
       } else {
-        toast.error(`Failed to generate illustration ${subjectIndex + 1}`)
+        toast.error(data.error || `Failed to generate illustration ${subjectIndex + 1}`)
         setErrorCount(prev => prev + 1)
       }
     } catch (err) {
@@ -93,7 +93,7 @@ export default function ResultPage() {
         setStatus('completed')
       }
     }
-  }, [selectedSubjects, style, palette, customPalettePrompt, mode, bookFormatId, storyId, bookProfile, charRefsPayload, addGeneratedImage, setStatus])
+  }, [selectedSubjects, styleTemplateId, genre, ageRange, mode, bookFormatId, storyId, charRefsPayload, addGeneratedImage, setStatus])
 
   const generateOneRef = useRef(generateOne)
   generateOneRef.current = generateOne
@@ -111,8 +111,8 @@ export default function ResultPage() {
   // Initial generation on mount (wait for hydration)
   useEffect(() => {
     if (!hasHydrated) return
-    if (!selectedSubjects.length || !style || !palette || !bookFormatId) {
-      router.push('/generate/style')
+    if (!selectedSubjects.length || !styleTemplateId || !bookFormatId) {
+      router.push('/generate/setup')
       return
     }
 
@@ -154,14 +154,13 @@ export default function ResultPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           subject: subject.description,
-          style,
-          palette,
-          customPalettePrompt: palette === 'custom' ? customPalettePrompt : undefined,
+          styleTemplateId,
+          genre: genre ?? undefined,
+          ageRange: ageRange ?? undefined,
           mode,
           bookFormatId,
           resolution: '2K',
           storyId: storyId ?? undefined,
-          bookProfile: bookProfile ?? undefined,
           characterReferences: charRefsPayload,
           subjectCharacters: subject.characters,
         }),
@@ -172,7 +171,7 @@ export default function ResultPage() {
         replaceGeneratedImage(subjectId, data.imageUrl)
         toast.success('Illustration regenerated!')
       } else {
-        toast.error('Regeneration failed. Please try again.')
+        toast.error(data.error || 'Regeneration failed. Please try again.')
       }
     } catch {
       toast.error('Regeneration failed. Please try again.')
@@ -224,7 +223,7 @@ export default function ResultPage() {
         <GenerationProgress
           status={status}
           subjectTitle={selectedSubjects[attemptedCount]?.title}
-          styleName={style ?? undefined}
+          styleName={styleTemplateId ?? undefined}
           onStop={handleStop}
         />
       )}
@@ -253,7 +252,7 @@ export default function ResultPage() {
         <GenerationProgress
           status={status}
           subjectTitle={selectedSubjects[attemptedCount]?.title}
-          styleName={style ?? undefined}
+          styleName={styleTemplateId ?? undefined}
           onStop={handleStop}
         />
       )}
@@ -268,7 +267,7 @@ export default function ResultPage() {
 
       {allDone && !isGenerating && (
         <div className="flex justify-between">
-          <Button variant="outline" onClick={() => router.push('/generate/style')}>
+          <Button variant="outline" onClick={() => router.push('/generate/setup')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Change Settings
           </Button>

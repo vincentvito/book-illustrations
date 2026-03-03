@@ -12,7 +12,7 @@ import type { StoryWithGenerations } from '@/types/story'
 export default function StoryDetailPage() {
   const { storyId } = useParams<{ storyId: string }>()
   const router = useRouter()
-  const { setStory, setStoryId, setBookProfile } = useGenerationStore()
+  const { setStory, setStoryId, setGenre, setAgeRange } = useGenerationStore()
   const [story, setStoryData] = useState<StoryWithGenerations | null>(null)
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)
@@ -41,9 +41,10 @@ export default function StoryDetailPage() {
     setStoryId(story.id)
     setStory(story.story_text, story.filename ?? undefined)
     if (story.book_profile) {
-      setBookProfile(story.book_profile)
+      setGenre(story.book_profile.genre)
+      setAgeRange(story.book_profile.ageRange)
     }
-    router.push(story.book_profile ? '/generate' : '/generate/profile')
+    router.push('/generate/setup')
   }
 
   const handleDelete = async () => {

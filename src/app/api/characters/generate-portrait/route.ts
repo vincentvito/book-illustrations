@@ -1,29 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateImage } from '@/lib/replicate/nano-banana'
-import { buildCharacterPortraitPrompt, STYLE_PRESETS } from '@/lib/prompt-builder'
-import type { StylePresetId } from '@/lib/prompt-builder'
+import { buildCharacterPortraitPrompt } from '@/lib/prompt-builder'
 import { deductCredit } from '@/lib/credits'
+import { getStyleTemplate } from '@/lib/style-library/templates'
+import { resolveBookProfile } from '@/lib/style-library/resolve-profile'
 import { z } from 'zod'
-import type { BookProfile } from '@/types/book-profile'
-
-const BookProfileSchema = z.object({
-  genre: z.string(),
-  ageRange: z.string(),
-  moods: z.array(z.string()).min(1),
-  characterStyle: z.string(),
-  illustrationType: z.string(),
-  era: z.string(),
-  culturalInfluence: z.string(),
-  detailLevel: z.string(),
-}).optional()
+import type { BookGenre, AgeRange } from '@/types/book-profile'
 
 const RequestSchema = z.object({
   characterName: z.string().min(1),
   appearance: z.string().min(5),
-  style: z.string(),
+  styleTemplateId: z.string().min(1),
+  genre: z.string().optional(),
+  ageRange: z.string().optional(),
   numberOfCandidates: z.number().int().min(1).max(4).default(4),
-  bookProfile: BookProfileSchema,
 })
 
 export async function POST(req: NextRequest) {
@@ -37,10 +28,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  const { characterName, appearance, style, numberOfCandidates, bookProfile: bookProfileData } = parsed.data
+  const { characterName, appearance, styleTemplateId, genre, ageRange, numberOfCandidates } = parsed.data
 
-  if (!(style in STYLE_PRESETS)) {
-    return NextResponse.json({ error: 'Invalid style' }, { status: 400 })
+  const template = getStyleTemplate(styleTemplateId)
+  if (!template) {
+    return NextResponse.json({ error: 'Invalid style template' }, { status: 400 })
   }
 
   const { data: profile } = await supabase
@@ -58,11 +50,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to deduct credit' }, { status: 500 })
   }
 
+  const bookProfile = genre && ageRange
+    ? resolveBookProfile(template, genre as BookGenre, ageRange as AgeRange)
+    : undefined
+
   const prompt = buildCharacterPortraitPrompt({
     characterName,
     appearance,
-    style: style as StylePresetId,
-    bookProfile: bookProfileData as BookProfile | undefined,
+    style: template.stylePreset,
+    bookProfile,
   })
 
   try {

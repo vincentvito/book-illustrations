@@ -2,13 +2,14 @@
 
 import { CharacterCard } from './character-card'
 import type { Character, CharacterReference } from '@/types/generation'
-import type { BookProfile } from '@/types/book-profile'
+import type { BookGenre, AgeRange } from '@/types/book-profile'
 
 interface CharacterGridProps {
   characters: Character[]
   approvedRefs: CharacterReference[]
-  style: string
-  bookProfile?: BookProfile
+  styleTemplateId: string
+  genre?: BookGenre
+  ageRange?: AgeRange
   storyId?: string
   onUpdateCharacter: (index: number, updated: Character) => void
   onRemoveCharacter: (index: number) => void
@@ -18,8 +19,9 @@ interface CharacterGridProps {
 export function CharacterGrid({
   characters,
   approvedRefs,
-  style,
-  bookProfile,
+  styleTemplateId,
+  genre,
+  ageRange,
   storyId,
   onUpdateCharacter,
   onRemoveCharacter,
@@ -34,8 +36,9 @@ export function CharacterGrid({
           approvedRef={approvedRefs.find(
             r => r.characterName === character.name
           )}
-          style={style}
-          bookProfile={bookProfile}
+          styleTemplateId={styleTemplateId}
+          genre={genre}
+          ageRange={ageRange}
           storyId={storyId}
           onUpdate={(updated) => onUpdateCharacter(i, updated)}
           onRemove={() => onRemoveCharacter(i)}

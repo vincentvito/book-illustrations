@@ -49,9 +49,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to save image' }, { status: 500 })
     }
 
-    const { data: publicUrlData } = supabase.storage
+    // Use signed URLs so external services (Replicate) can download the image
+    // (getPublicUrl only works if the bucket is configured as public)
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
       .from('character-references')
-      .getPublicUrl(storagePath)
+      .createSignedUrl(storagePath, 60 * 60 * 24 * 365) // 1 year
+
+    if (signedUrlError || !signedUrlData?.signedUrl) {
+      console.error('Signed URL error:', signedUrlError)
+      return NextResponse.json({ error: 'Failed to create image URL' }, { status: 500 })
+    }
 
     // Save to character library
     const { data: character, error: insertError } = await supabase
@@ -60,7 +67,7 @@ export async function POST(req: NextRequest) {
         user_id: user.id,
         character_name: characterName,
         appearance_description: appearance,
-        reference_image_url: publicUrlData.publicUrl,
+        reference_image_url: signedUrlData.signedUrl,
         reference_image_path: storagePath,
         portrait_prompt_used: promptUsed,
       })

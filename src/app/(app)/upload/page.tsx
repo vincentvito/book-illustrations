@@ -63,7 +63,7 @@ export default function UploadPage() {
 
       const { story } = await res.json()
       setStoryId(story.id)
-      router.push('/generate/profile')
+      router.push('/generate/setup')
     } catch (error) {
       console.error('Story creation error:', error)
       if (error instanceof DOMException && error.name === 'AbortError') {

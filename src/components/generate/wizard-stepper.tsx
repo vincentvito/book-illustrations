@@ -12,10 +12,9 @@ interface Step {
 
 const BASE_STEPS: Step[] = [
   { path: '/upload', label: 'Upload' },
-  { path: '/generate/profile', label: 'Profile' },
+  { path: '/generate/setup', label: 'Style' },
   { path: '/generate', label: 'Mode' },
   { path: '/generate/subjects', label: 'Subjects' },
-  { path: '/generate/style', label: 'Style' },
   { path: '/generate/result', label: 'Result' },
 ]
 

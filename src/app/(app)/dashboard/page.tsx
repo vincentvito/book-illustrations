@@ -1,18 +1,26 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useStories } from '@/hooks/use-stories'
+import { useStoryActions } from '@/hooks/use-story-actions'
 import { StoryCard } from '@/components/dashboard/story-card'
 import { EmptyState } from '@/components/dashboard/empty-state'
 
 export default function DashboardPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { stories, loading } = useStories()
+  const { stories, loading, refetch } = useStories()
+  const { renameStory, deleteStory, renaming, deleting } = useStoryActions({ refetch })
+
+  const [renameTarget, setRenameTarget] = useState<{ id: string; title: string } | null>(null)
+  const [renameValue, setRenameValue] = useState('')
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   useEffect(() => {
     if (searchParams.get('payment') === 'success') {
@@ -20,6 +28,17 @@ export default function DashboardPage() {
       router.replace('/dashboard', { scroll: false })
     }
   }, [searchParams, router])
+
+  const handleRenameSubmit = async () => {
+    if (!renameTarget) return
+    const trimmed = renameValue.trim()
+    if (!trimmed || trimmed === renameTarget.title) {
+      setRenameTarget(null)
+      return
+    }
+    const success = await renameStory(renameTarget.id, trimmed)
+    if (success) setRenameTarget(null)
+  }
 
   return (
     <div className="space-y-6">
@@ -51,10 +70,60 @@ export default function DashboardPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {stories.map(story => (
-            <StoryCard key={story.id} story={story} />
+            <StoryCard
+              key={story.id}
+              story={story}
+              onRename={(id, title) => {
+                setRenameTarget({ id, title })
+                setRenameValue(title)
+              }}
+              onDelete={(id) => setDeleteTargetId(id)}
+            />
           ))}
         </div>
       )}
+
+      {/* Rename Modal */}
+      {renameTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-gray-900">Rename Story</h3>
+            <div className="mt-4">
+              <Input
+                autoFocus
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleRenameSubmit()
+                  if (e.key === 'Escape') setRenameTarget(null)
+                }}
+                placeholder="Story title"
+              />
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button variant="ghost" onClick={() => setRenameTarget(null)} disabled={renaming}>
+                Cancel
+              </Button>
+              <Button onClick={handleRenameSubmit} loading={renaming}>
+                Save
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={deleteTargetId !== null}
+        title="Delete story?"
+        description="This will permanently delete this story. Generated illustrations will be kept but unlinked."
+        onConfirm={async () => {
+          if (deleteTargetId) await deleteStory(deleteTargetId)
+          setDeleteTargetId(null)
+        }}
+        onCancel={() => setDeleteTargetId(null)}
+        loading={deleting}
+      />
     </div>
   )
 }

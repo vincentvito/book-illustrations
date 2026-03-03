@@ -8,13 +8,14 @@ import { Button } from '@/components/ui/button'
 import { CharacterPortraitCandidates } from './character-portrait-candidates'
 import { Sparkles, Trash2, Check } from 'lucide-react'
 import type { Character, CharacterReference } from '@/types/generation'
-import type { BookProfile } from '@/types/book-profile'
+import type { BookGenre, AgeRange } from '@/types/book-profile'
 
 interface CharacterCardProps {
   character: Character
   approvedRef?: CharacterReference
-  style: string
-  bookProfile?: BookProfile
+  styleTemplateId: string
+  genre?: BookGenre
+  ageRange?: AgeRange
   storyId?: string
   onUpdate: (updated: Character) => void
   onRemove: () => void
@@ -24,8 +25,9 @@ interface CharacterCardProps {
 export function CharacterCard({
   character,
   approvedRef,
-  style,
-  bookProfile,
+  styleTemplateId,
+  genre,
+  ageRange,
   storyId,
   onUpdate,
   onRemove,
@@ -50,9 +52,10 @@ export function CharacterCard({
         body: JSON.stringify({
           characterName: character.name,
           appearance: character.appearance,
-          style,
+          styleTemplateId,
+          genre,
+          ageRange,
           numberOfCandidates: 4,
-          bookProfile,
         }),
       })
 

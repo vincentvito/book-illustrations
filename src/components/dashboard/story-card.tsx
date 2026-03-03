@@ -1,7 +1,8 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { Image, Clock } from 'lucide-react'
+import { Image, Clock, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { DropdownMenu, DropdownItem } from '@/components/ui/dropdown-menu'
 import type { StoryListItem } from '@/types/story'
 
 function timeAgo(dateStr: string): string {
@@ -16,7 +17,13 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString()
 }
 
-export function StoryCard({ story }: { story: StoryListItem }) {
+interface StoryCardProps {
+  story: StoryListItem
+  onRename: (storyId: string, currentTitle: string) => void
+  onDelete: (storyId: string) => void
+}
+
+export function StoryCard({ story, onRename, onDelete }: StoryCardProps) {
   const router = useRouter()
 
   return (
@@ -30,8 +37,31 @@ export function StoryCard({ story }: { story: StoryListItem }) {
           router.push(`/dashboard/${story.id}`)
         }
       }}
-      className="group cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+      className="group relative cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
     >
+      {/* Three-dot menu */}
+      <div
+        className="absolute right-2 top-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
+        <DropdownMenu
+          align="right"
+          trigger={
+            <button className="rounded-lg bg-white/80 p-1.5 text-gray-500 shadow-sm backdrop-blur-sm hover:bg-white hover:text-gray-700">
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+          }
+        >
+          <DropdownItem onClick={() => onRename(story.id, story.title)}>
+            <Pencil className="h-3.5 w-3.5" /> Rename
+          </DropdownItem>
+          <DropdownItem variant="danger" onClick={() => onDelete(story.id)}>
+            <Trash2 className="h-3.5 w-3.5" /> Delete
+          </DropdownItem>
+        </DropdownMenu>
+      </div>
+
       {/* Thumbnail */}
       <div className="aspect-[16/9] bg-gray-100">
         {story.thumbnail_url ? (

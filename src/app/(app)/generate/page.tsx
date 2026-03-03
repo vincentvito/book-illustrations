@@ -11,15 +11,15 @@ import { WizardStepper } from '@/components/generate/wizard-stepper'
 export default function GeneratePage() {
   const router = useRouter()
   const hasHydrated = useHydrationGuard()
-  const { storyText, bookProfile, mode, setMode } = useGenerationStore()
+  const { storyText, styleTemplateId, mode, setMode } = useGenerationStore()
 
   useEffect(() => {
     if (!hasHydrated) return
     if (!storyText) { router.push('/upload'); return }
-    if (!bookProfile) { router.push('/generate/profile'); return }
-  }, [hasHydrated, storyText, bookProfile, router])
+    if (!styleTemplateId) { router.push('/generate/setup'); return }
+  }, [hasHydrated, storyText, styleTemplateId, router])
 
-  if (!hasHydrated || !storyText || !bookProfile) {
+  if (!hasHydrated || !storyText || !styleTemplateId) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
@@ -39,7 +39,7 @@ export default function GeneratePage() {
       <ModeSelector selected={mode} onSelect={setMode} />
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={() => router.push('/generate/profile')}>
+        <Button variant="outline" onClick={() => router.push('/generate/setup')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>

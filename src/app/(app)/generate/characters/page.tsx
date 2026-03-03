@@ -16,19 +16,19 @@ export default function CharactersPage() {
   const {
     storyId, characters, setCharacters,
     approvedCharacterRefs, addApprovedCharacterRef, removeApprovedCharacterRef,
-    renameCharacterInSubjects, style, bookProfile, mode,
+    renameCharacterInSubjects, styleTemplateId, genre, ageRange, mode,
   } = useGenerationStore()
 
   const [libraryOpen, setLibraryOpen] = useState(false)
 
   useEffect(() => {
     if (!hasHydrated) return
-    if (!mode || mode !== 'all' || !style) {
-      router.push('/generate/style')
+    if (!mode || mode !== 'all' || !styleTemplateId) {
+      router.push('/generate/setup')
     }
-  }, [hasHydrated, mode, style, router])
+  }, [hasHydrated, mode, styleTemplateId, router])
 
-  if (!hasHydrated || !mode || mode !== 'all' || !style) {
+  if (!hasHydrated || !mode || mode !== 'all' || !styleTemplateId) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
@@ -39,7 +39,6 @@ export default function CharactersPage() {
   const handleUpdateCharacter = (index: number, updated: Character) => {
     const next = [...characters]
     const oldName = next[index].name
-    // If name changed, update approved refs and subject character lists
     if (oldName !== updated.name) {
       removeApprovedCharacterRef(oldName)
       if (oldName && updated.name) {
@@ -60,7 +59,6 @@ export default function CharactersPage() {
   }
 
   const handleImportFromLibrary = (ref: CharacterReference) => {
-    // Add to characters list if not already present
     const exists = characters.some(c => c.name === ref.characterName)
     if (!exists) {
       setCharacters([...characters, {
@@ -68,7 +66,6 @@ export default function CharactersPage() {
         appearance: ref.appearanceDescription,
       }])
     }
-    // Add as approved ref
     addApprovedCharacterRef(ref)
   }
 
@@ -128,8 +125,9 @@ export default function CharactersPage() {
         <CharacterGrid
           characters={characters}
           approvedRefs={approvedCharacterRefs}
-          style={style}
-          bookProfile={bookProfile ?? undefined}
+          styleTemplateId={styleTemplateId}
+          genre={genre ?? undefined}
+          ageRange={ageRange ?? undefined}
           storyId={storyId ?? undefined}
           onUpdateCharacter={handleUpdateCharacter}
           onRemoveCharacter={handleRemoveCharacter}
@@ -144,7 +142,7 @@ export default function CharactersPage() {
       )}
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={() => router.push('/generate/style')}>
+        <Button variant="outline" onClick={() => router.push('/generate/subjects')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
