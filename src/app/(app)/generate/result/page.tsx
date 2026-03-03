@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { useGenerationStore } from '@/stores/generation-store'
+import { useGenerationStore, useHydrationGuard } from '@/stores/generation-store'
 import { GenerationProgress } from '@/components/generate/generation-progress'
 import { ImageResult } from '@/components/generate/image-result'
 import { Button } from '@/components/ui/button'
@@ -11,8 +11,9 @@ import { ArrowLeft, Plus, Eye, Loader2 } from 'lucide-react'
 
 export default function ResultPage() {
   const router = useRouter()
+  const hasHydrated = useHydrationGuard()
   const {
-    _hasHydrated, storyId, bookProfile, selectedSubjects, style, palette, customPalettePrompt,
+    storyId, bookProfile, selectedSubjects, style, palette, customPalettePrompt,
     mode, bookFormatId, generatedImages, approvedCharacterRefs,
     addGeneratedImage, replaceGeneratedImage, setStatus, status, reset,
   } = useGenerationStore()
@@ -109,7 +110,7 @@ export default function ResultPage() {
 
   // Initial generation on mount (wait for hydration)
   useEffect(() => {
-    if (!_hasHydrated) return
+    if (!hasHydrated) return
     if (!selectedSubjects.length || !style || !palette || !bookFormatId) {
       router.push('/generate/style')
       return
@@ -122,7 +123,7 @@ export default function ResultPage() {
       generateOne(0)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_hasHydrated])
+  }, [hasHydrated])
 
   // Sequential loop: after each completion, schedule the next subject
   useEffect(() => {
@@ -198,7 +199,7 @@ export default function ResultPage() {
     ? attemptedCount >= selectedSubjects.length || stopped
     : (generatedImages.length > 0 || status === 'completed') && !isGenerating
 
-  if (!_hasHydrated) {
+  if (!hasHydrated) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-orange-500" />

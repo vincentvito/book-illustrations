@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useGenerationStore } from '@/stores/generation-store'
+import { useGenerationStore, useHydrationGuard } from '@/stores/generation-store'
 import { StylePicker } from '@/components/generate/style-picker'
 import { PalettePicker } from '@/components/generate/palette-picker'
 import { FormatPicker } from '@/components/generate/format-picker'
@@ -13,19 +13,20 @@ import { WizardStepper } from '@/components/generate/wizard-stepper'
 
 export default function StylePage() {
   const router = useRouter()
+  const hasHydrated = useHydrationGuard()
   const {
-    _hasHydrated, selectedSubjects, mode, characters, approvedCharacterRefs,
+    selectedSubjects, mode, characters, approvedCharacterRefs,
     style, palette, customPalettePrompt, bookFormatId,
     setStyle, setPalette, setBookFormat,
   } = useGenerationStore()
   const { credits } = useCredits()
 
   useEffect(() => {
-    if (!_hasHydrated) return
+    if (!hasHydrated) return
     if (!selectedSubjects.length) { router.push('/generate/subjects') }
-  }, [_hasHydrated, selectedSubjects.length, router])
+  }, [hasHydrated, selectedSubjects.length, router])
 
-  if (!_hasHydrated || !selectedSubjects.length) {
+  if (!hasHydrated || !selectedSubjects.length) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-orange-500" />

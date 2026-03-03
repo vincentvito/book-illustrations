@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useGenerationStore } from '@/stores/generation-store'
+import { useGenerationStore, useHydrationGuard } from '@/stores/generation-store'
 import { ModeSelector } from '@/components/generate/mode-selector'
 import { Button } from '@/components/ui/button'
 import { ArrowRight, ArrowLeft, Loader2 } from 'lucide-react'
@@ -10,15 +10,16 @@ import { WizardStepper } from '@/components/generate/wizard-stepper'
 
 export default function GeneratePage() {
   const router = useRouter()
-  const { _hasHydrated, storyText, bookProfile, mode, setMode } = useGenerationStore()
+  const hasHydrated = useHydrationGuard()
+  const { storyText, bookProfile, mode, setMode } = useGenerationStore()
 
   useEffect(() => {
-    if (!_hasHydrated) return
+    if (!hasHydrated) return
     if (!storyText) { router.push('/upload'); return }
     if (!bookProfile) { router.push('/generate/profile'); return }
-  }, [_hasHydrated, storyText, bookProfile, router])
+  }, [hasHydrated, storyText, bookProfile, router])
 
-  if (!_hasHydrated || !storyText || !bookProfile) {
+  if (!hasHydrated || !storyText || !bookProfile) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-orange-500" />

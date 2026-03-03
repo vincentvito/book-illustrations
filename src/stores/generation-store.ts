@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { StylePresetId, PalettePresetId } from '@/lib/prompt-builder'
@@ -130,7 +131,8 @@ export const useGenerationStore = create<GenerationState>()(
       name: 'generation-wizard',
       storage: createJSONStorage(() => sessionStorage),
       version: 1,
-      onRehydrateStorage: () => () => {
+      onRehydrateStorage: () => (_state, error) => {
+        if (error) console.error('Zustand rehydration error:', error)
         useGenerationStore.setState({ _hasHydrated: true })
       },
       partialize: (state) => ({
@@ -152,3 +154,17 @@ export const useGenerationStore = create<GenerationState>()(
     }
   )
 )
+
+/** Safety net: forces _hasHydrated after 3 s if Zustand persist never fires. */
+export function useHydrationGuard() {
+  const hasHydrated = useGenerationStore((s) => s._hasHydrated)
+  useEffect(() => {
+    if (hasHydrated) return
+    const timer = setTimeout(() => {
+      console.warn('Zustand hydration timeout — forcing _hasHydrated')
+      useGenerationStore.setState({ _hasHydrated: true })
+    }, 3000)
+    return () => clearTimeout(timer)
+  }, [hasHydrated])
+  return hasHydrated
+}

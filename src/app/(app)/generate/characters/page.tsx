@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useGenerationStore } from '@/stores/generation-store'
+import { useGenerationStore, useHydrationGuard } from '@/stores/generation-store'
 import { CharacterGrid } from '@/components/generate/character-grid'
 import { CharacterLibraryModal } from '@/components/generate/character-library-modal'
 import { Button } from '@/components/ui/button'
@@ -12,8 +12,9 @@ import { WizardStepper } from '@/components/generate/wizard-stepper'
 
 export default function CharactersPage() {
   const router = useRouter()
+  const hasHydrated = useHydrationGuard()
   const {
-    _hasHydrated, storyId, characters, setCharacters,
+    storyId, characters, setCharacters,
     approvedCharacterRefs, addApprovedCharacterRef, removeApprovedCharacterRef,
     renameCharacterInSubjects, style, bookProfile, mode,
   } = useGenerationStore()
@@ -21,13 +22,13 @@ export default function CharactersPage() {
   const [libraryOpen, setLibraryOpen] = useState(false)
 
   useEffect(() => {
-    if (!_hasHydrated) return
+    if (!hasHydrated) return
     if (!mode || mode !== 'all' || !style) {
       router.push('/generate/style')
     }
-  }, [_hasHydrated, mode, style, router])
+  }, [hasHydrated, mode, style, router])
 
-  if (!_hasHydrated || !mode || mode !== 'all' || !style) {
+  if (!hasHydrated || !mode || mode !== 'all' || !style) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-orange-500" />

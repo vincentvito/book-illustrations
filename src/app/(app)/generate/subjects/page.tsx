@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useGenerationStore } from '@/stores/generation-store'
+import { useGenerationStore, useHydrationGuard } from '@/stores/generation-store'
 import { SubjectGrid } from '@/components/generate/subject-grid'
 import { GenerationProgress } from '@/components/generate/generation-progress'
 import { Button } from '@/components/ui/button'
@@ -10,11 +10,34 @@ import { ArrowRight, ArrowLeft, RefreshCw, Loader2 } from 'lucide-react'
 import type { Subject } from '@/types/generation'
 import { WizardStepper } from '@/components/generate/wizard-stepper'
 
+const ANALYZE_CLIENT_TIMEOUT_MS = 250_000
+const ANALYZE_TIMEOUT_MESSAGE = 'The analysis timed out. Your story might be very long - try again or shorten it.'
+
+type AnalyzeErrorPayload = {
+  error?: unknown
+  code?: unknown
+  requestId?: unknown
+}
+
+function buildAnalyzeErrorMessage(status: number, payload: AnalyzeErrorPayload | null): string {
+  const isTimeout = status === 504 || status === 408 || payload?.code === 'ANALYZE_TIMEOUT'
+  if (isTimeout) {
+    return typeof payload?.requestId === 'string'
+      ? `${ANALYZE_TIMEOUT_MESSAGE} Reference ID: ${payload.requestId}.`
+      : ANALYZE_TIMEOUT_MESSAGE
+  }
+  if (typeof payload?.error === 'string' && payload.error.length > 0) {
+    return payload.error
+  }
+  return 'Failed to analyze story. Please try again.'
+}
+
 export default function SubjectsPage() {
   const router = useRouter()
+  const hasHydrated = useHydrationGuard()
   const {
-    _hasHydrated, storyText, bookProfile, mode, subjects, selectedSubjects,
-    characters, setSubjects, setCharacters, selectSubject, deselectSubject, replaceSubject, setStatus, status
+    storyText, bookProfile, mode, subjects, selectedSubjects,
+    setSubjects, setCharacters, selectSubject, deselectSubject, replaceSubject, setStatus, status
   } = useGenerationStore()
   const [regeneratingId, setRegeneratingId] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
@@ -27,7 +50,7 @@ export default function SubjectsPage() {
     setError(null)
 
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 310_000)
+    const timeoutId = setTimeout(() => controller.abort(), ANALYZE_CLIENT_TIMEOUT_MS)
 
     try {
       const res = await fetch('/api/analyze', {
@@ -38,17 +61,8 @@ export default function SubjectsPage() {
       })
 
       if (!res.ok) {
-        let errorMessage = 'Failed to analyze story. Please try again.'
-        try {
-          const errorData = await res.json()
-          if (errorData.error && typeof errorData.error === 'string') {
-            errorMessage = errorData.error
-          }
-        } catch {
-          if (res.status === 504 || res.status === 408) {
-            errorMessage = 'The analysis timed out. Your story might be very long — try again or shorten it.'
-          }
-        }
+        const errorData = await res.json().catch(() => null) as AnalyzeErrorPayload | null
+        const errorMessage = buildAnalyzeErrorMessage(res.status, errorData)
         setError(errorMessage)
         setStatus('error')
         return
@@ -69,7 +83,7 @@ export default function SubjectsPage() {
     } catch (error) {
       console.error('Analysis error:', error)
       if (error instanceof DOMException && error.name === 'AbortError') {
-        setError('The analysis timed out. Your story might be very long — try again or shorten it.')
+        setError(ANALYZE_TIMEOUT_MESSAGE)
       } else {
         setError('Connection error. Check your internet and try again.')
       }
@@ -81,7 +95,7 @@ export default function SubjectsPage() {
   }
 
   useEffect(() => {
-    if (!_hasHydrated) return
+    if (!hasHydrated) return
     if (!storyText || !mode) {
       router.push('/generate')
       return
@@ -90,7 +104,7 @@ export default function SubjectsPage() {
       fetchSubjects()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_hasHydrated])
+  }, [hasHydrated])
 
   const handleRegenerate = async (subjectId: number) => {
     if (!storyText || !mode) return
@@ -136,7 +150,7 @@ export default function SubjectsPage() {
     ? selectedSubjects.length > 0
     : selectedSubjects.length === 1
 
-  if (!_hasHydrated) {
+  if (!hasHydrated) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
@@ -153,7 +167,7 @@ export default function SubjectsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Suggested Subjects</h1>
           <p className="text-gray-500">
             {storyText && storyText.length > 20_000
-              ? 'AI is reading your story — this may take up to a minute for longer texts...'
+              ? 'AI is reading your story - this may take up to 4 minutes for longer texts...'
               : 'AI is reading your story...'}
           </p>
         </div>
