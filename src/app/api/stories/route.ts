@@ -5,7 +5,7 @@ import { z } from 'zod'
 const CreateStorySchema = z.object({
   title: z.string().min(1).max(200),
   story_text: z.string().min(1),
-  filename: z.string().optional(),
+  filename: z.string().nullable().optional(),
 })
 
 export async function GET() {
@@ -81,6 +81,7 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error) {
+    console.error('Story insert failed:', error.message, error.code, error.details)
     return NextResponse.json({ error: 'Failed to create story' }, { status: 500 })
   }
 
