@@ -32,6 +32,10 @@ export default function UploadPage() {
   const handleContinue = async () => {
     if (!storyText) return
     setCreating(true)
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 15_000)
+
     try {
       const title = storyFilename
         ? storyFilename.replace(/\.\w+$/, '')
@@ -45,6 +49,7 @@ export default function UploadPage() {
           story_text: storyText,
           filename: storyFilename,
         }),
+        signal: controller.signal,
       })
 
       if (!res.ok) {
@@ -59,9 +64,15 @@ export default function UploadPage() {
       const { story } = await res.json()
       setStoryId(story.id)
       router.push('/generate/profile')
-    } catch {
-      toast.error('Connection error. Please check your internet and try again.')
+    } catch (error) {
+      console.error('Story creation error:', error)
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        toast.error('The request timed out. Please try again.')
+      } else {
+        toast.error('Connection error. Please check your internet and try again.')
+      }
     } finally {
+      clearTimeout(timeoutId)
       setCreating(false)
     }
   }

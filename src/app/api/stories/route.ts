@@ -57,33 +57,46 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await req.json()
-  const parsed = CreateStorySchema.safeParse(body)
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+    const body = await req.json()
+    const parsed = CreateStorySchema.safeParse(body)
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors
+      const firstError = Object.values(fieldErrors).flat()[0]
+      return NextResponse.json(
+        { error: firstError ?? 'Invalid story data' },
+        { status: 400 }
+      )
+    }
+
+    const { title, story_text, filename } = parsed.data
+
+    const { data: story, error } = await supabase
+      .from('stories')
+      .insert({
+        user_id: user.id,
+        title,
+        story_text,
+        filename: filename ?? null,
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Story insert failed:', error.message, error.code, error.details)
+      return NextResponse.json({ error: 'Failed to create story' }, { status: 500 })
+    }
+
+    return NextResponse.json({ story })
+  } catch (error) {
+    console.error('Unhandled error in POST /api/stories:', error)
+    return NextResponse.json(
+      { error: 'An unexpected error occurred. Please try again.' },
+      { status: 500 }
+    )
   }
-
-  const { title, story_text, filename } = parsed.data
-
-  const { data: story, error } = await supabase
-    .from('stories')
-    .insert({
-      user_id: user.id,
-      title,
-      story_text,
-      filename: filename ?? null,
-    })
-    .select()
-    .single()
-
-  if (error) {
-    console.error('Story insert failed:', error.message, error.code, error.details)
-    return NextResponse.json({ error: 'Failed to create story' }, { status: 500 })
-  }
-
-  return NextResponse.json({ story })
 }
