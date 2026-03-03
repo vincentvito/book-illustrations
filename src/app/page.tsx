@@ -1,7 +1,12 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { BookOpen, Upload, Sparkles, Palette, Download, ArrowRight } from 'lucide-react'
-import { HOMEPAGE_SHOWCASE } from '@/lib/gallery/showcase-data'
+import { HOMEPAGE_SHOWCASE, SHOWCASE_ITEMS } from '@/lib/gallery/showcase-data'
 import { GalleryCard } from '@/components/marketing/gallery-card'
+
+const HERO_IMAGES = SHOWCASE_ITEMS.filter((item) =>
+  ['watercolor-enchanted-oak', 'oil-painting-knight-kingdom', 'manga-sorceress-library'].includes(item.id)
+)
 
 export default function LandingPage() {
   return (
@@ -31,33 +36,112 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="px-4 py-20 text-center sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-3xl">
-          <h1 className="mb-6 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-            Create Beautiful Book Illustrations{' '}
-            <span className="text-orange-600">with AI</span>
-          </h1>
-          <p className="mb-8 text-lg text-gray-600">
-            Upload your story, let AI analyze it and suggest illustrations,
-            choose your style and palette, and generate professional-quality
-            book covers and interior illustrations in minutes.
-          </p>
-          <div className="flex justify-center gap-4">
-            <Link
-              href="/signup"
-              className="inline-flex items-center rounded-lg bg-orange-600 px-6 py-3 text-sm font-medium text-white hover:bg-orange-700"
-            >
-              Start for Free
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-            <Link
-              href="/login"
-              className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Sign in
-            </Link>
+      <section className="overflow-hidden px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-12 lg:flex-row lg:gap-16">
+          {/* Left: Copy */}
+          <div className="flex-1 text-center lg:text-left">
+            <p className="mb-4 text-sm font-semibold uppercase tracking-wide text-orange-600">
+              AI-Powered Book Illustrations
+            </p>
+            <h1 className="mb-6 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+              Turn Your Stories Into{' '}
+              <span className="text-orange-600">Stunning Illustrations</span>
+            </h1>
+            <p className="mb-8 text-lg text-gray-600">
+              Upload your manuscript, choose from 10 art styles and palettes,
+              and generate professional book covers and interior illustrations
+              in under 60 seconds.
+            </p>
+            <div className="flex justify-center gap-4 lg:justify-start">
+              <Link
+                href="/signup"
+                className="inline-flex items-center rounded-lg bg-orange-600 px-6 py-3 text-sm font-medium text-white hover:bg-orange-700"
+              >
+                Start for Free
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+              <Link
+                href="/login"
+                className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Sign in
+              </Link>
+            </div>
+            <p className="mt-3 text-sm text-gray-400">3 free credits on signup &middot; No credit card required</p>
           </div>
-          <p className="mt-3 text-sm text-gray-400">3 free credits on signup</p>
+
+          {/* Right: Image Collage */}
+          <div className="relative hidden h-[480px] flex-1 md:block">
+            {/* Image 1 — large, back-left */}
+            <div className="absolute left-0 top-0 w-[65%] rotate-[-2deg] overflow-hidden rounded-2xl shadow-xl">
+              <Image
+                src={HERO_IMAGES[0].imagePath}
+                alt={HERO_IMAGES[0].description}
+                width={520}
+                height={520}
+                className="aspect-square object-cover"
+                placeholder="blur"
+                blurDataURL={HERO_IMAGES[0].blurDataURL}
+                priority
+              />
+              <span className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-gray-700 shadow-sm backdrop-blur">
+                {HERO_IMAGES[0].styleName} &middot; {HERO_IMAGES[0].genre}
+              </span>
+            </div>
+
+            {/* Image 2 — medium, top-right */}
+            <div className="absolute right-0 top-4 w-[50%] rotate-[2deg] overflow-hidden rounded-2xl shadow-xl">
+              <Image
+                src={HERO_IMAGES[1].imagePath}
+                alt={HERO_IMAGES[1].description}
+                width={400}
+                height={400}
+                className="aspect-square object-cover"
+                placeholder="blur"
+                blurDataURL={HERO_IMAGES[1].blurDataURL}
+                priority
+              />
+              <span className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-gray-700 shadow-sm backdrop-blur">
+                {HERO_IMAGES[1].styleName} &middot; {HERO_IMAGES[1].genre}
+              </span>
+            </div>
+
+            {/* Image 3 — medium, bottom-right */}
+            <div className="absolute bottom-0 right-[10%] w-[48%] rotate-[-1deg] overflow-hidden rounded-2xl shadow-xl">
+              <Image
+                src={HERO_IMAGES[2].imagePath}
+                alt={HERO_IMAGES[2].description}
+                width={380}
+                height={380}
+                className="aspect-square object-cover"
+                placeholder="blur"
+                blurDataURL={HERO_IMAGES[2].blurDataURL}
+                priority
+              />
+              <span className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-gray-700 shadow-sm backdrop-blur">
+                {HERO_IMAGES[2].styleName} &middot; {HERO_IMAGES[2].genre}
+              </span>
+            </div>
+          </div>
+
+          {/* Mobile: single featured image */}
+          <div className="relative w-full max-w-sm md:hidden">
+            <div className="overflow-hidden rounded-2xl shadow-xl">
+              <Image
+                src={HERO_IMAGES[0].imagePath}
+                alt={HERO_IMAGES[0].description}
+                width={520}
+                height={520}
+                className="aspect-square w-full object-cover"
+                placeholder="blur"
+                blurDataURL={HERO_IMAGES[0].blurDataURL}
+                priority
+              />
+              <span className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-gray-700 shadow-sm backdrop-blur">
+                {HERO_IMAGES[0].styleName} &middot; {HERO_IMAGES[0].genre}
+              </span>
+            </div>
+          </div>
         </div>
       </section>
 
