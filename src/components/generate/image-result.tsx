@@ -18,12 +18,8 @@ export function ImageResult({ imageUrl, bookFormatId, onRegenerate, regenerating
   const handleDownload = async () => {
     setDownloading(true)
     try {
-      const res = await fetch('/api/process', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl, bookFormatId, fit: 'cover' }),
-      })
-
+      // Images are already at exact book format dimensions after generation-time processing.
+      const res = await fetch(imageUrl)
       if (!res.ok) throw new Error('Download failed')
 
       const blob = await res.blob()

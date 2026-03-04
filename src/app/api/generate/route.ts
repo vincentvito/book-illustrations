@@ -5,10 +5,13 @@ import { generateWithCharacters } from '@/lib/replicate/flux2-pro'
 import { buildNanoBananaPrompt, buildFlux2ScenePrompt } from '@/lib/prompt-builder'
 import { BOOK_FORMATS } from '@/lib/image/formats'
 import { findClosestAspectRatio } from '@/lib/image/aspect-ratio'
+import { calculateFluxDimensions } from '@/lib/image/flux-dimensions'
 import { deductCredit } from '@/lib/credits'
 import { getStyleTemplate } from '@/lib/style-library/templates'
 import { resolveBookProfile } from '@/lib/style-library/resolve-profile'
 import { z } from 'zod'
+import { randomUUID } from 'crypto'
+import sharp from 'sharp'
 import type { BookGenre, AgeRange } from '@/types/book-profile'
 
 const CharacterRefSchema = z.object({
@@ -144,11 +147,12 @@ export async function POST(req: NextRequest) {
     let imageUrl: string
 
     if (actuallyUseFlux2) {
+      const fluxDims = calculateFluxDimensions(bookFormat.widthPx, bookFormat.heightPx)
       const result = await generateWithCharacters({
         prompt,
         characterImageUrls: relevantRefs.map(r => r.referenceImageUrl),
-        width: bookFormat.widthPx,
-        height: bookFormat.heightPx,
+        width: fluxDims.width,
+        height: fluxDims.height,
       })
       imageUrl = result.imageUrl
     } else {
@@ -165,6 +169,46 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Client disconnected' }, { status: 499 })
     }
 
+    // Post-process: resize to exact book format dimensions and upload to Storage
+    let finalImageUrl = imageUrl
+    let storagePath: string | null = null
+
+    try {
+      const rawResponse = await fetch(imageUrl)
+      if (!rawResponse.ok) throw new Error(`Failed to fetch raw image: ${rawResponse.status}`)
+      const rawBuffer = Buffer.from(await rawResponse.arrayBuffer())
+
+      const processedBuffer = await sharp(rawBuffer)
+        .resize(bookFormat.widthPx, bookFormat.heightPx, {
+          fit: 'cover',
+          position: 'centre',
+        })
+        .png({ quality: 95 })
+        .toBuffer()
+
+      storagePath = `${user.id}/${randomUUID()}.png`
+
+      const { error: uploadError } = await supabase.storage
+        .from('generated-illustrations')
+        .upload(storagePath, processedBuffer, {
+          contentType: 'image/png',
+          upsert: false,
+        })
+
+      if (uploadError) throw uploadError
+
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from('generated-illustrations')
+        .createSignedUrl(storagePath, 60 * 60 * 24 * 365)
+
+      if (signedUrlError || !signedUrlData?.signedUrl) throw signedUrlError ?? new Error('Failed to create signed URL')
+
+      finalImageUrl = signedUrlData.signedUrl
+    } catch (processError) {
+      console.error('[generate] Post-processing failed, using raw URL:', processError)
+      storagePath = null
+    }
+
     const { error: insertError } = await supabase.from('generations').insert({
       user_id: user.id,
       mode,
@@ -178,7 +222,8 @@ export async function POST(req: NextRequest) {
       credits_used: 1,
       status: 'completed',
       story_id: storyId ?? null,
-      image_url: imageUrl,
+      image_url: finalImageUrl,
+      image_storage_path: storagePath,
     })
 
     if (insertError) {
@@ -192,7 +237,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({
-      imageUrl,
+      imageUrl: finalImageUrl,
       aspectRatio: arInfo.id,
       bookFormatId,
       prompt,

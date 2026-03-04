@@ -331,6 +331,7 @@ export function buildFlux2ScenePrompt(options: Flux2SceneOptions): string {
     '',
     `COLOR PALETTE: ${palettePrompt}`,
     `COMPOSITION: ${compositionHint}`,
+    'FRAMING: Ensure all important subjects and focal elements are slightly inset from the edges, leaving a thin margin of background at all borders.',
   ]
 
   if (profileBlock) {
@@ -377,6 +378,7 @@ export function buildNanoBananaPrompt(options: PromptOptions): string {
     `COLOR PALETTE: ${palettePrompt}`,
     '',
     compositionInstruction,
+    'FRAMING: Ensure all important subjects and focal elements are slightly inset from the edges, leaving a thin margin of background at all borders.',
   ]
 
   if (profileBlock) {

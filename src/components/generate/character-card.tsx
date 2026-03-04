@@ -175,14 +175,17 @@ export function CharacterCard({
               <Sparkles className="mr-1.5 h-3.5 w-3.5" />
               {candidates.length ? 'Regenerate' : 'Generate Portraits'}
             </Button>
-            {selectedIndex !== null && (
+            {(selectedIndex !== null || approvedRef) && (
               <Button
                 size="sm"
                 onClick={handleApprove}
                 loading={approving}
+                disabled={!!approvedRef}
+                variant={approvedRef ? 'outline' : 'default'}
+                className={approvedRef ? 'border-green-500 text-green-600' : ''}
               >
                 <Check className="mr-1.5 h-3.5 w-3.5" />
-                Approve
+                {approvedRef ? 'Approved' : 'Approve'}
               </Button>
             )}
           </>

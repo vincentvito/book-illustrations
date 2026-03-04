@@ -28,16 +28,14 @@ export async function generateWithCharacters(input: Flux2ProInput): Promise<Flux
     imageInputs[IMAGE_KEYS[i]] = input.characterImageUrls[i]
   }
 
-  // FLUX.2 Pro output dimensions must be multiples of 16 and total <= 9MP.
-  // Cap each dimension to keep the product under 9 million pixels.
-  const MAX_PIXELS = 9_000_000
-  let w = Math.round(input.width / 16) * 16
-  let h = Math.round(input.height / 16) * 16
-
-  if (w * h > MAX_PIXELS) {
-    const scale = Math.sqrt(MAX_PIXELS / (w * h))
-    w = Math.round((w * scale) / 16) * 16
-    h = Math.round((h * scale) / 16) * 16
+  // Caller must provide FLUX-safe dimensions (via calculateFluxDimensions).
+  const w = input.width
+  const h = input.height
+  if (w > 2048 || h > 2048) {
+    throw new Error(`FLUX dimensions exceed 2048: ${w}x${h}`)
+  }
+  if (w % 16 !== 0 || h % 16 !== 0) {
+    throw new Error(`FLUX dimensions must be multiples of 16: ${w}x${h}`)
   }
 
   const output = await getReplicate().run('black-forest-labs/flux-2-pro', {
