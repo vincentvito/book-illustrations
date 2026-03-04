@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { generateImage } from '@/lib/replicate/nano-banana'
 import { generateWithCharacters } from '@/lib/replicate/flux2-pro'
 import { buildNanoBananaPrompt, buildFlux2ScenePrompt } from '@/lib/prompt-builder'
@@ -45,6 +46,8 @@ export async function POST(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const supabaseAdmin = createAdminClient()
 
   const body = await req.json()
   const parsed = GenerateSchema.safeParse(body)
@@ -171,7 +174,7 @@ export async function POST(req: NextRequest) {
     console.log(`[generate] Used ${useFlux2 ? 'FLUX 2 Pro' : 'Nano-Banana'}, refs: ${allImageUrls.length}`)
 
     if (req.signal.aborted) {
-      await deductCredit(supabase, user.id, -1, 'Refund: client disconnected')
+      await deductCredit(supabaseAdmin, user.id, -1, 'Refund: client disconnected')
       return NextResponse.json({ error: 'Client disconnected' }, { status: 499 })
     }
 
@@ -194,7 +197,7 @@ export async function POST(req: NextRequest) {
 
       storagePath = `${user.id}/${randomUUID()}.png`
 
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabaseAdmin.storage
         .from('generated-illustrations')
         .upload(storagePath, processedBuffer, {
           contentType: 'image/png',
@@ -203,7 +206,7 @@ export async function POST(req: NextRequest) {
 
       if (uploadError) throw uploadError
 
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+      const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
         .from('generated-illustrations')
         .createSignedUrl(storagePath, 60 * 60 * 24 * 365)
 
@@ -215,7 +218,7 @@ export async function POST(req: NextRequest) {
       storagePath = null
     }
 
-    const { error: insertError } = await supabase.from('generations').insert({
+    const { error: insertError } = await supabaseAdmin.from('generations').insert({
       user_id: user.id,
       mode,
       style: template.stylePreset,
@@ -237,7 +240,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (storyId) {
-      await supabase.from('stories')
+      await supabaseAdmin.from('stories')
         .update({ updated_at: new Date().toISOString() })
         .eq('id', storyId)
     }
@@ -249,7 +252,7 @@ export async function POST(req: NextRequest) {
       prompt,
     })
   } catch (error) {
-    await deductCredit(supabase, user.id, -1, 'Refund: generation failed')
+    await deductCredit(supabaseAdmin, user.id, -1, 'Refund: generation failed')
 
     const errMsg = error instanceof Error ? error.message : String(error)
     console.error('[generate] error:', { error: errMsg, useFlux2, refCount: relevantRefs.length })
