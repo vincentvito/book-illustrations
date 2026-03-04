@@ -181,7 +181,7 @@ export function CharacterCard({
                 onClick={handleApprove}
                 loading={approving}
                 disabled={!!approvedRef}
-                variant={approvedRef ? 'outline' : 'default'}
+                variant={approvedRef ? 'outline' : 'primary'}
                 className={approvedRef ? 'border-green-500 text-green-600' : ''}
               >
                 <Check className="mr-1.5 h-3.5 w-3.5" />
