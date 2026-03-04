@@ -102,17 +102,58 @@ function buildBookContextBlock(profile: BookProfile): string {
   return lines.join('\n')
 }
 
+// ── Character extraction prompt ───────────────────────────────────────────
+
+export function buildCharacterExtractionPrompt(
+  storyText: string,
+  profile?: BookProfile
+): string {
+  const profileBlock = profile ? `\n${buildBookContextBlock(profile)}\n` : ''
+
+  return `You are an expert book illustrator advisor. Analyze the following story and identify ALL characters that would need a visual representation in illustrations.
+${profileBlock}
+STORY TEXT:
+---
+${storyText}
+---
+
+Identify every character who appears in the story. For each character, provide a detailed physical appearance description that an illustrator would need to draw them consistently across multiple images.
+
+Include:
+- Main characters (always include)
+- Supporting characters who appear in multiple scenes
+- Any character with a notable physical description in the text
+
+For each character's appearance, describe: approximate age, body build, hair color/style, eye color, skin tone, facial features, typical clothing, and any distinguishing features (scars, glasses, accessories, etc.). If the text doesn't specify a detail, infer something plausible and consistent with the story's setting and genre.
+
+Respond ONLY with valid JSON in this exact format:
+{
+  "characters": [
+    {
+      "name": "Character name",
+      "appearance": "Detailed physical description: age, build, hair, face, clothing, distinguishing features"
+    }
+  ]
+}`
+}
+
 // ── Main export ───────────────────────────────────────────────────────────
 
 export function buildAnalysisPrompt(
   storyText: string,
   mode: 'cover' | 'single' | 'all',
-  profile?: BookProfile
+  profile?: BookProfile,
+  approvedCharacters?: Array<{ name: string; appearance: string }>
 ): string {
   const profileBlock = profile ? `\n${buildBookContextBlock(profile)}\n` : ''
 
+  const hasCharacters = approvedCharacters && approvedCharacters.length > 0
+  const charactersBlock = hasCharacters
+    ? `\nKNOWN CHARACTERS (already identified and approved by the user — use these exact names when referencing characters):\n${approvedCharacters.map(c => `- ${c.name}: ${c.appearance}`).join('\n')}\n`
+    : ''
+
   const baseInstruction = `You are an expert book illustrator advisor. Analyze the following story and suggest illustration subjects.
-${profileBlock}
+${profileBlock}${charactersBlock}
 STORY TEXT:
 ---
 ${storyText}
@@ -130,7 +171,7 @@ Each subject must:
 - Include the main character(s) or central visual motif
 - Be described in 2-3 detailed sentences suitable as an image generation prompt
 - Respect the book context above (audience, tone, character style, content guidelines)
-
+${hasCharacters ? '- Include a "characters" field listing which of the known characters appear in each subject\n' : ''}
 Respond ONLY with valid JSON in this exact format:
 {
   "subjects": [
@@ -138,7 +179,7 @@ Respond ONLY with valid JSON in this exact format:
       "id": 1,
       "title": "Short descriptive title",
       "description": "Detailed visual description for image generation...",
-      "storyContext": "Brief explanation of why this captures the story"
+      "storyContext": "Brief explanation of why this captures the story"${hasCharacters ? ',\n      "characters": ["Character name 1"]' : ''}
     }
   ]
 }`
@@ -152,7 +193,7 @@ Each subject must:
 - Be described in 2-3 detailed sentences suitable as an image generation prompt
 - Include details about characters, setting, mood, and action
 - Respect the book context above (audience, tone, character style, content guidelines)
-
+${hasCharacters ? '- Include a "characters" field listing which of the known characters appear in each subject\n' : ''}
 Respond ONLY with valid JSON in this exact format:
 {
   "subjects": [
@@ -160,7 +201,7 @@ Respond ONLY with valid JSON in this exact format:
       "id": 1,
       "title": "Short descriptive title",
       "description": "Detailed visual description for image generation...",
-      "storyContext": "Which part of the story this illustrates and why"
+      "storyContext": "Which part of the story this illustrates and why"${hasCharacters ? ',\n      "characters": ["Character name 1"]' : ''}
     }
   ]
 }`
@@ -192,14 +233,25 @@ VISUAL VARIETY — the set of illustrations MUST include a mix of:
 - Emotional range: vary between tension, joy, wonder, sadness, calm across the set
 - Composition: alternate between action scenes, quiet moments, and environmental scenes
 
-First, identify the recurring characters and define their visual appearance. Then select scenes.
+${hasCharacters
+  ? `Use the known characters listed above when assigning characters to scenes. Reference them by their exact name.
+Identify the distinct environments/settings that appear across the story.`
+  : `First, identify the recurring characters and define their visual appearance.
+Then, identify the distinct environments/settings that appear across the story.`} Each environment should be a visually unique location (e.g. "The Enchanted Forest", "Clara's Kitchen", "The Castle Courtyard"). Write a detailed visual description of each environment covering architecture, landscape, lighting, weather, textures, atmosphere, and distinctive features.
+Then select scenes, assigning each scene to one of the identified environments.
 
 Respond ONLY with valid JSON in this exact format:
 {
-  "characters": [
+${hasCharacters ? '' : `  "characters": [
     {
       "name": "Character name",
       "appearance": "Consistent physical description: age, build, hair, face, clothing, distinguishing features"
+    }
+  ],
+`}  "environments": [
+    {
+      "name": "Environment name (e.g. The Enchanted Forest)",
+      "description": "Detailed visual description: architecture, landscape, lighting, weather, color palette, textures, atmosphere, time of day, distinctive features. 3-5 sentences."
     }
   ],
   "subjects": [
@@ -208,6 +260,7 @@ Respond ONLY with valid JSON in this exact format:
       "title": "Short descriptive title",
       "description": "4-6 sentence visual description for image generation. Focus on scene, actions, environment, lighting, and spatial composition. Do NOT describe character appearance (that comes from reference images). No style or color references.",
       "characters": ["Character name 1", "Character name 2"],
+      "environment": "Environment name from the environments list above",
       "storyContext": "Why this moment was chosen and what it represents in the narrative arc",
       "storySection": "First few words of the sentence in the story where this scene occurs"
     }

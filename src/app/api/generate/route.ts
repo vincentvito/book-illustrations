@@ -16,6 +16,12 @@ import type { BookGenre, AgeRange } from '@/types/book-profile'
 
 const CharacterRefSchema = z.object({
   characterName: z.string(),
+  appearanceDescription: z.string().optional(),
+  referenceImageUrl: z.string().url(),
+})
+
+const EnvironmentRefSchema = z.object({
+  environmentName: z.string(),
   referenceImageUrl: z.string().url(),
 })
 
@@ -30,6 +36,9 @@ const GenerateSchema = z.object({
   storyId: z.string().uuid().optional(),
   characterReferences: z.array(CharacterRefSchema).optional(),
   subjectCharacters: z.array(z.string()).optional(),
+  environmentReferences: z.array(EnvironmentRefSchema).optional(),
+  subjectEnvironment: z.string().optional(),
+  editInstructions: z.string().max(500).optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -47,6 +56,8 @@ export async function POST(req: NextRequest) {
     subject, styleTemplateId, genre, ageRange, mode, bookFormatId,
     resolution, storyId,
     characterReferences, subjectCharacters,
+    environmentReferences, subjectEnvironment,
+    editInstructions,
   } = parsed.data
 
   const template = getStyleTemplate(styleTemplateId)
@@ -81,7 +92,21 @@ export async function POST(req: NextRequest) {
       )
     : characterReferences ?? []
 
-  const useFlux2 = relevantRefs.length > 0
+  // Determine which environment reference to use for this subject
+  const relevantEnvRef = environmentReferences && subjectEnvironment
+    ? environmentReferences.find(ref =>
+        ref.environmentName.toLowerCase() === subjectEnvironment.toLowerCase()
+      )
+    : undefined
+  const envRefs = relevantEnvRef ? [relevantEnvRef] : []
+
+  // Combine all image refs (characters first, then environments), capped at 8 for FLUX 2 Pro
+  const allImageUrls = [
+    ...relevantRefs.map(r => r.referenceImageUrl),
+    ...envRefs.map(r => r.referenceImageUrl),
+  ].slice(0, 8)
+
+  const useFlux2 = allImageUrls.length > 0
 
   let prompt: string
   if (useFlux2) {
@@ -93,6 +118,8 @@ export async function POST(req: NextRequest) {
       bookFormat,
       bookProfile,
       characterNames: relevantRefs.map(r => r.characterName),
+      characterAppearances: relevantRefs.map(r => r.appearanceDescription ?? ''),
+      environmentNames: envRefs.map(r => r.environmentName),
     })
   } else {
     prompt = buildNanoBananaPrompt({
@@ -102,7 +129,15 @@ export async function POST(req: NextRequest) {
       mode,
       bookFormat,
       bookProfile,
+      characters: characterReferences?.map(r => ({
+        name: r.characterName,
+        appearance: r.appearanceDescription ?? '',
+      })),
     })
+  }
+
+  if (editInstructions) {
+    prompt += `\n\nEDIT INSTRUCTIONS: Keep the same overall scene, style, and composition, but apply these changes: ${editInstructions}`
   }
 
   const arInfo = findClosestAspectRatio(bookFormat.aspectRatio)
@@ -112,45 +147,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to deduct credit' }, { status: 500 })
   }
 
-  let actuallyUseFlux2 = useFlux2
-
   try {
-    // Verify reference image URLs are accessible before calling FLUX.2 Pro
-    if (useFlux2) {
-      for (const ref of relevantRefs) {
-        try {
-          const headRes = await fetch(ref.referenceImageUrl, { method: 'HEAD' })
-          if (!headRes.ok) {
-            console.error(`[generate] Reference image not accessible: ${ref.characterName} -> ${headRes.status}`)
-            actuallyUseFlux2 = false
-            break
-          }
-        } catch (e) {
-          console.error(`[generate] Reference image fetch error: ${ref.characterName}`, e)
-          actuallyUseFlux2 = false
-          break
-        }
-      }
-      if (!actuallyUseFlux2) {
-        console.warn('[generate] Falling back to nano-banana due to inaccessible reference images')
-        prompt = buildNanoBananaPrompt({
-          subject,
-          style: template.stylePreset,
-          palette: template.palettePreset,
-          mode,
-          bookFormat,
-          bookProfile,
-        })
-      }
-    }
-
     let imageUrl: string
 
-    if (actuallyUseFlux2) {
+    if (useFlux2) {
       const fluxDims = calculateFluxDimensions(bookFormat.widthPx, bookFormat.heightPx)
       const result = await generateWithCharacters({
         prompt,
-        characterImageUrls: relevantRefs.map(r => r.referenceImageUrl),
+        characterImageUrls: allImageUrls,
         width: fluxDims.width,
         height: fluxDims.height,
       })
@@ -163,6 +167,8 @@ export async function POST(req: NextRequest) {
       })
       imageUrl = result.imageUrl
     }
+
+    console.log(`[generate] Used ${useFlux2 ? 'FLUX 2 Pro' : 'Nano-Banana'}, refs: ${allImageUrls.length}`)
 
     if (req.signal.aborted) {
       await deductCredit(supabase, user.id, -1, 'Refund: client disconnected')
@@ -246,7 +252,7 @@ export async function POST(req: NextRequest) {
     await deductCredit(supabase, user.id, -1, 'Refund: generation failed')
 
     const errMsg = error instanceof Error ? error.message : String(error)
-    console.error('[generate] error:', { error: errMsg, useFlux2: actuallyUseFlux2, refCount: relevantRefs.length })
+    console.error('[generate] error:', { error: errMsg, useFlux2, refCount: relevantRefs.length })
     return NextResponse.json({ error: `Image generation failed: ${errMsg}` }, { status: 500 })
   }
 }

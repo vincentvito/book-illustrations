@@ -5,36 +5,97 @@ import { useRouter } from 'next/navigation'
 import { useGenerationStore, useHydrationGuard } from '@/stores/generation-store'
 import { CharacterGrid } from '@/components/generate/character-grid'
 import { CharacterLibraryModal } from '@/components/generate/character-library-modal'
+import { GenerationProgress } from '@/components/generate/generation-progress'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, ArrowLeft, Plus, BookOpen, SkipForward, Loader2 } from 'lucide-react'
+import { ArrowRight, ArrowLeft, Plus, BookOpen, SkipForward, RefreshCw, Loader2 } from 'lucide-react'
 import type { Character, CharacterReference } from '@/types/generation'
 import { WizardStepper } from '@/components/generate/wizard-stepper'
+
+const EXTRACT_CLIENT_TIMEOUT_MS = 250_000
 
 export default function CharactersPage() {
   const router = useRouter()
   const hasHydrated = useHydrationGuard()
   const {
-    storyId, characters, setCharacters,
+    storyId, storyText, characters, setCharacters,
+    charactersExtracted, setCharactersExtracted,
     approvedCharacterRefs, addApprovedCharacterRef, removeApprovedCharacterRef,
     renameCharacterInSubjects, styleTemplateId, genre, ageRange, mode,
+    setStatus, status,
   } = useGenerationStore()
 
   const [libraryOpen, setLibraryOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchCharacters = async () => {
+    if (!storyText || !mode) return
+    setLoading(true)
+    setStatus('analyzing')
+    setError(null)
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), EXTRACT_CLIENT_TIMEOUT_MS)
+
+    try {
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storyText,
+          mode,
+          phase: 'characters',
+          styleTemplateId: styleTemplateId ?? undefined,
+          genre: genre ?? undefined,
+          ageRange: ageRange ?? undefined,
+        }),
+        signal: controller.signal,
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null)
+        setError(typeof errorData?.error === 'string' ? errorData.error : 'Failed to extract characters. Please try again.')
+        setStatus('error')
+        return
+      }
+
+      const data = await res.json()
+
+      if (data.characters && Array.isArray(data.characters)) {
+        setCharactersExtracted(true)
+        setCharacters(data.characters)
+        setStatus('idle')
+      } else {
+        setCharactersExtracted(true)
+        setCharacters([])
+        setStatus('idle')
+      }
+    } catch (err) {
+      console.error('Character extraction error:', err)
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setError('The analysis timed out. Your story might be very long - try again or shorten it.')
+      } else {
+        setError('Connection error. Check your internet and try again.')
+      }
+      setStatus('error')
+    } finally {
+      clearTimeout(timeoutId)
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     if (!hasHydrated) return
-    if (!mode || mode !== 'all' || !styleTemplateId) {
+    if (!mode || !styleTemplateId) {
       router.push('/generate/setup')
+      return
     }
-  }, [hasHydrated, mode, styleTemplateId, router])
-
-  if (!hasHydrated || !mode || mode !== 'all' || !styleTemplateId) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-      </div>
-    )
-  }
+    // Auto-extract characters if not yet done
+    if (!charactersExtracted && characters.length === 0) {
+      fetchCharacters()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasHydrated])
 
   const handleUpdateCharacter = (index: number, updated: Character) => {
     const next = [...characters]
@@ -73,6 +134,56 @@ export default function CharactersPage() {
     c => c.name && approvedCharacterRefs.some(r => r.characterName === c.name)
   )
 
+  if (!hasHydrated) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+      </div>
+    )
+  }
+
+  if (loading || status === 'analyzing') {
+    return (
+      <div className="space-y-8">
+        <WizardStepper />
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Character Studio</h1>
+          <p className="text-gray-500">
+            {storyText && storyText.length > 20_000
+              ? 'AI is reading your story to identify characters - this may take up to 4 minutes for longer texts...'
+              : 'AI is reading your story to identify characters...'}
+          </p>
+        </div>
+        <GenerationProgress status="analyzing" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-8">
+        <WizardStepper />
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Character Studio</h1>
+          <p className="text-gray-500">Something went wrong while extracting characters.</p>
+        </div>
+        <div className="flex flex-col items-center gap-4 rounded-xl border border-red-200 bg-red-50 p-8">
+          <p className="text-center text-sm font-medium text-red-700">{error}</p>
+          <Button onClick={fetchCharacters} loading={loading}>
+            <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+            Try Again
+          </Button>
+        </div>
+        <div className="flex justify-start">
+          <Button variant="outline" onClick={() => router.push('/generate')}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <WizardStepper />
@@ -86,6 +197,10 @@ export default function CharactersPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={fetchCharacters} loading={loading}>
+            <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+            Re-extract
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -108,7 +223,7 @@ export default function CharactersPage() {
       {characters.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-gray-300 p-8">
           <p className="text-sm text-gray-500">
-            No characters extracted from the story. Add characters manually or import from your library.
+            No characters found in the story. Add characters manually or import from your library.
           </p>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleAddCharacter}>
@@ -125,7 +240,7 @@ export default function CharactersPage() {
         <CharacterGrid
           characters={characters}
           approvedRefs={approvedCharacterRefs}
-          styleTemplateId={styleTemplateId}
+          styleTemplateId={styleTemplateId!}
           genre={genre ?? undefined}
           ageRange={ageRange ?? undefined}
           storyId={storyId ?? undefined}
@@ -142,21 +257,21 @@ export default function CharactersPage() {
       )}
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={() => router.push('/generate/subjects')}>
+        <Button variant="outline" onClick={() => router.push('/generate')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
         <div className="flex gap-2">
           <Button
             variant="ghost"
-            onClick={() => router.push('/generate/result')}
+            onClick={() => router.push('/generate/subjects')}
           >
             <SkipForward className="mr-1.5 h-3.5 w-3.5" />
             Skip
           </Button>
           <Button
             disabled={!allApproved}
-            onClick={() => router.push('/generate/result')}
+            onClick={() => router.push('/generate/subjects')}
           >
             Continue
             <ArrowRight className="ml-2 h-4 w-4" />

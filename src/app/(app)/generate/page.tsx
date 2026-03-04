@@ -43,7 +43,7 @@ export default function GeneratePage() {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
-        <Button disabled={!mode} onClick={() => router.push('/generate/subjects')}>
+        <Button disabled={!mode} onClick={() => router.push('/generate/characters')}>
           Continue
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>

@@ -14,17 +14,20 @@ const BASE_STEPS: Step[] = [
   { path: '/upload', label: 'Upload' },
   { path: '/generate/setup', label: 'Style' },
   { path: '/generate', label: 'Mode' },
+  { path: '/generate/characters', label: 'Characters' },
   { path: '/generate/subjects', label: 'Subjects' },
   { path: '/generate/result', label: 'Result' },
 ]
 
 export function WizardStepper() {
   const pathname = usePathname()
-  const { mode, characters } = useGenerationStore()
+  const { mode, environments } = useGenerationStore()
 
   const steps = [...BASE_STEPS]
-  if (mode === 'all' && characters.length > 0) {
-    steps.splice(5, 0, { path: '/generate/characters', label: 'Characters' })
+  // Insert Ambience before Result if applicable
+  if (mode === 'all' && environments.length > 0) {
+    const resultIdx = steps.findIndex(s => s.path === '/generate/result')
+    steps.splice(resultIdx, 0, { path: '/generate/ambience', label: 'Ambience' })
   }
 
   const currentIndex = steps.findIndex((s) => s.path === pathname)

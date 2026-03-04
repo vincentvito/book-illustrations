@@ -15,7 +15,7 @@ export default function ResultPage() {
   const {
     storyId, styleTemplateId, genre, ageRange,
     selectedSubjects, mode, bookFormatId,
-    generatedImages, approvedCharacterRefs,
+    generatedImages, approvedCharacterRefs, approvedEnvironmentRefs,
     addGeneratedImage, replaceGeneratedImage, setStatus, status, reset,
   } = useGenerationStore()
 
@@ -23,10 +23,21 @@ export default function ResultPage() {
     () => approvedCharacterRefs.length > 0
       ? approvedCharacterRefs.map(r => ({
           characterName: r.characterName,
+          appearanceDescription: r.appearanceDescription,
           referenceImageUrl: r.referenceImageUrl,
         }))
       : undefined,
     [approvedCharacterRefs]
+  )
+
+  const envRefsPayload = useMemo(
+    () => approvedEnvironmentRefs.length > 0
+      ? approvedEnvironmentRefs.map(r => ({
+          environmentName: r.environmentName,
+          referenceImageUrl: r.referenceImageUrl,
+        }))
+      : undefined,
+    [approvedEnvironmentRefs]
   )
 
   const [attemptedCount, setAttemptedCount] = useState(0)
@@ -67,6 +78,8 @@ export default function ResultPage() {
           storyId: storyId ?? undefined,
           characterReferences: charRefsPayload,
           subjectCharacters: subject.characters,
+          environmentReferences: envRefsPayload,
+          subjectEnvironment: subject.environment,
         }),
         signal: controller.signal,
       })
@@ -93,7 +106,7 @@ export default function ResultPage() {
         setStatus('completed')
       }
     }
-  }, [selectedSubjects, styleTemplateId, genre, ageRange, mode, bookFormatId, storyId, charRefsPayload, addGeneratedImage, setStatus])
+  }, [selectedSubjects, styleTemplateId, genre, ageRange, mode, bookFormatId, storyId, charRefsPayload, envRefsPayload, addGeneratedImage, setStatus])
 
   const generateOneRef = useRef(generateOne)
   generateOneRef.current = generateOne
@@ -144,7 +157,7 @@ export default function ResultPage() {
     return () => clearTimeout(timer)
   }, [mode, status, attemptedCount, selectedSubjects.length])
 
-  const handleRegenerate = async (subjectId: number) => {
+  const handleRegenerate = async (subjectId: number, editInstructions?: string) => {
     setRegenerating(true)
     const subject = selectedSubjects.find(s => s.id === subjectId) || selectedSubjects[0]
 
@@ -163,6 +176,9 @@ export default function ResultPage() {
           storyId: storyId ?? undefined,
           characterReferences: charRefsPayload,
           subjectCharacters: subject.characters,
+          environmentReferences: envRefsPayload,
+          subjectEnvironment: subject.environment,
+          editInstructions,
         }),
       })
 
@@ -240,7 +256,7 @@ export default function ResultPage() {
               <ImageResult
                 imageUrl={img.url}
                 bookFormatId={bookFormatId!}
-                onRegenerate={() => handleRegenerate(img.subjectId)}
+                onRegenerate={(editInstructions) => handleRegenerate(img.subjectId, editInstructions)}
                 regenerating={regenerating}
               />
             </div>

@@ -10,6 +10,18 @@ export interface CharacterReference {
   referenceImageUrl: string
 }
 
+export interface Environment {
+  name: string
+  description: string
+}
+
+export interface EnvironmentReference {
+  id: string
+  environmentName: string
+  environmentDescription: string
+  referenceImageUrl: string
+}
+
 export interface Subject {
   id: number
   title: string
@@ -17,10 +29,12 @@ export interface Subject {
   storyContext: string
   storySection?: string
   characters?: string[]
+  environment?: string
 }
 
 export interface AnalysisResponse {
   characters?: Character[]
+  environments?: Environment[]
   subjects: Subject[]
 }
 

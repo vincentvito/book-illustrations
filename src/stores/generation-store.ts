@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { Subject, Character, CharacterReference, GenerationMode, GenerationStatus } from '@/types/generation'
+import type { Subject, Character, CharacterReference, Environment, EnvironmentReference, GenerationMode, GenerationStatus } from '@/types/generation'
 import type { BookGenre, AgeRange } from '@/types/book-profile'
 
 interface GenerationState {
@@ -13,8 +13,11 @@ interface GenerationState {
   genre: BookGenre | null
   ageRange: AgeRange | null
   mode: GenerationMode | null
+  charactersExtracted: boolean
   characters: Character[]
   approvedCharacterRefs: CharacterReference[]
+  environments: Environment[]
+  approvedEnvironmentRefs: EnvironmentReference[]
   subjects: Subject[]
   selectedSubjects: Subject[]
   bookFormatId: string | null
@@ -27,14 +30,21 @@ interface GenerationState {
   setGenre: (genre: BookGenre) => void
   setAgeRange: (ageRange: AgeRange) => void
   setMode: (mode: GenerationMode) => void
+  setCharactersExtracted: (extracted: boolean) => void
   setCharacters: (characters: Character[]) => void
   setApprovedCharacterRefs: (refs: CharacterReference[]) => void
   addApprovedCharacterRef: (ref: CharacterReference) => void
   removeApprovedCharacterRef: (characterName: string) => void
+  setEnvironments: (environments: Environment[]) => void
+  setApprovedEnvironmentRefs: (refs: EnvironmentReference[]) => void
+  addApprovedEnvironmentRef: (ref: EnvironmentReference) => void
+  removeApprovedEnvironmentRef: (environmentName: string) => void
   setSubjects: (subjects: Subject[]) => void
   selectSubject: (subject: Subject) => void
   deselectSubject: (subjectId: number) => void
   replaceSubject: (oldId: number, newSubject: Subject) => void
+  addSubject: (subject: Subject) => void
+  removeSubject: (subjectId: number) => void
   setBookFormat: (formatId: string) => void
   renameCharacterInSubjects: (oldName: string, newName: string) => void
   addGeneratedImage: (url: string, subjectId: number) => void
@@ -52,8 +62,11 @@ const initialState = {
   genre: null as BookGenre | null,
   ageRange: null as AgeRange | null,
   mode: null,
+  charactersExtracted: false,
   characters: [] as Character[],
   approvedCharacterRefs: [] as CharacterReference[],
+  environments: [] as Environment[],
+  approvedEnvironmentRefs: [] as EnvironmentReference[],
   subjects: [],
   selectedSubjects: [],
   bookFormatId: null,
@@ -71,8 +84,13 @@ export const useGenerationStore = create<GenerationState>()(
       setStyleTemplate: (id) => set({ styleTemplateId: id }),
       setGenre: (genre) => set({ genre }),
       setAgeRange: (ageRange) => set({ ageRange }),
-      setMode: (mode) => set({ mode, characters: [], approvedCharacterRefs: [], subjects: [], selectedSubjects: [] }),
-      setCharacters: (characters) => set({ characters }),
+      setMode: (mode) => set({ mode, charactersExtracted: false, characters: [], approvedCharacterRefs: [], environments: [], approvedEnvironmentRefs: [], subjects: [], selectedSubjects: [] }),
+      setCharactersExtracted: (extracted) => set({ charactersExtracted: extracted }),
+      setCharacters: (characters) => set((state) => ({
+        characters,
+        // Clear subjects when characters change (forces re-analysis with new characters)
+        ...(state.subjects.length > 0 ? { subjects: [], selectedSubjects: [] } : {}),
+      })),
       setApprovedCharacterRefs: (refs) => set({ approvedCharacterRefs: refs }),
       addApprovedCharacterRef: (ref) => set((state) => ({
         approvedCharacterRefs: [
@@ -82,6 +100,17 @@ export const useGenerationStore = create<GenerationState>()(
       })),
       removeApprovedCharacterRef: (characterName) => set((state) => ({
         approvedCharacterRefs: state.approvedCharacterRefs.filter(r => r.characterName !== characterName),
+      })),
+      setEnvironments: (environments) => set({ environments }),
+      setApprovedEnvironmentRefs: (refs) => set({ approvedEnvironmentRefs: refs }),
+      addApprovedEnvironmentRef: (ref) => set((state) => ({
+        approvedEnvironmentRefs: [
+          ...state.approvedEnvironmentRefs.filter(r => r.environmentName !== ref.environmentName),
+          ref,
+        ],
+      })),
+      removeApprovedEnvironmentRef: (environmentName) => set((state) => ({
+        approvedEnvironmentRefs: state.approvedEnvironmentRefs.filter(r => r.environmentName !== environmentName),
       })),
       setSubjects: (subjects) => set({ subjects }),
       selectSubject: (subject) => set((state) => ({
@@ -95,6 +124,13 @@ export const useGenerationStore = create<GenerationState>()(
       replaceSubject: (oldId, newSubject) => set((state) => ({
         subjects: state.subjects.map(s => s.id === oldId ? newSubject : s),
         selectedSubjects: state.selectedSubjects.map(s => s.id === oldId ? newSubject : s),
+      })),
+      addSubject: (subject) => set((state) => ({
+        subjects: [...state.subjects, subject],
+      })),
+      removeSubject: (subjectId) => set((state) => ({
+        subjects: state.subjects.filter(s => s.id !== subjectId),
+        selectedSubjects: state.selectedSubjects.filter(s => s.id !== subjectId),
       })),
       setBookFormat: (formatId) => set({ bookFormatId: formatId }),
       renameCharacterInSubjects: (oldName, newName) => set((state) => {
@@ -124,9 +160,9 @@ export const useGenerationStore = create<GenerationState>()(
     {
       name: 'generation-wizard',
       storage: createJSONStorage(() => sessionStorage),
-      version: 2,
+      version: 4,
       migrate: (_persisted, version) => {
-        if (version < 2) {
+        if (version < 4) {
           return { ...initialState, _hasHydrated: true }
         }
         return _persisted as Partial<GenerationState>
@@ -143,8 +179,11 @@ export const useGenerationStore = create<GenerationState>()(
         genre: state.genre,
         ageRange: state.ageRange,
         mode: state.mode,
+        charactersExtracted: state.charactersExtracted,
         characters: state.characters,
         approvedCharacterRefs: state.approvedCharacterRefs,
+        environments: state.environments,
+        approvedEnvironmentRefs: state.approvedEnvironmentRefs,
         subjects: state.subjects,
         selectedSubjects: state.selectedSubjects,
         bookFormatId: state.bookFormatId,

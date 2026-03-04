@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useGenerationStore, useHydrationGuard } from '@/stores/generation-store'
 import { SubjectGrid } from '@/components/generate/subject-grid'
@@ -37,14 +37,36 @@ export default function SubjectsPage() {
   const router = useRouter()
   const hasHydrated = useHydrationGuard()
   const {
-    storyText, styleTemplateId, genre, ageRange, mode, characters,
+    storyText, styleTemplateId, genre, ageRange, mode, characters, environments,
     subjects, selectedSubjects,
-    setSubjects, setCharacters, selectSubject, deselectSubject, replaceSubject, setStatus, status
+    setSubjects, setEnvironments, selectSubject, deselectSubject, replaceSubject, addSubject, removeSubject, setStatus, status
   } = useGenerationStore()
   const { credits } = useCredits()
   const [regeneratingId, setRegeneratingId] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [customIds, setCustomIds] = useState<Set<number>>(new Set())
+
+  const customIdsSet = useMemo(() => customIds, [customIds])
+
+  const handleAddScene = () => {
+    const id = Date.now()
+    addSubject({ id, title: '', description: '', storyContext: 'Custom scene' })
+    setCustomIds(prev => new Set(prev).add(id))
+  }
+
+  const handleEditSubject = (updated: Subject) => {
+    replaceSubject(updated.id, updated)
+  }
+
+  const handleDeleteSubject = (subjectId: number) => {
+    removeSubject(subjectId)
+    setCustomIds(prev => {
+      const next = new Set(prev)
+      next.delete(subjectId)
+      return next
+    })
+  }
 
   const fetchSubjects = async () => {
     if (!storyText || !mode) return
@@ -56,15 +78,21 @@ export default function SubjectsPage() {
     const timeoutId = setTimeout(() => controller.abort(), ANALYZE_CLIENT_TIMEOUT_MS)
 
     try {
+      const approvedCharacters = characters.length > 0
+        ? characters.filter(c => c.name).map(c => ({ name: c.name, appearance: c.appearance }))
+        : undefined
+
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           storyText,
           mode,
+          phase: 'subjects',
           styleTemplateId: styleTemplateId ?? undefined,
           genre: genre ?? undefined,
           ageRange: ageRange ?? undefined,
+          approvedCharacters,
         }),
         signal: controller.signal,
       })
@@ -80,8 +108,8 @@ export default function SubjectsPage() {
       const data = await res.json()
 
       if (data.subjects && Array.isArray(data.subjects) && data.subjects.length > 0) {
-        if (data.characters && Array.isArray(data.characters)) {
-          setCharacters(data.characters)
+        if (data.environments && Array.isArray(data.environments)) {
+          setEnvironments(data.environments)
         }
         setSubjects(data.subjects)
         setStatus('idle')
@@ -120,15 +148,21 @@ export default function SubjectsPage() {
     setRegeneratingId(subjectId)
 
     try {
+      const approvedCharacters = characters.length > 0
+        ? characters.filter(c => c.name).map(c => ({ name: c.name, appearance: c.appearance }))
+        : undefined
+
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           storyText,
           mode,
+          phase: 'subjects',
           styleTemplateId: styleTemplateId ?? undefined,
           genre: genre ?? undefined,
           ageRange: ageRange ?? undefined,
+          approvedCharacters,
         }),
       })
 
@@ -169,8 +203,8 @@ export default function SubjectsPage() {
     : selectedSubjects.length === 1 && hasEnoughCredits
 
   const handleContinue = () => {
-    if (mode === 'all' && characters.length > 0) {
-      router.push('/generate/characters')
+    if (mode === 'all' && environments.length > 0) {
+      router.push('/generate/ambience')
     } else {
       router.push('/generate/result')
     }
@@ -221,7 +255,7 @@ export default function SubjectsPage() {
         </div>
 
         <div className="flex justify-start">
-          <Button variant="outline" onClick={() => router.push('/generate')}>
+          <Button variant="outline" onClick={() => router.push('/generate/characters')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
@@ -255,6 +289,10 @@ export default function SubjectsPage() {
         onSelect={handleSelect}
         onRegenerate={handleRegenerate}
         regeneratingId={regeneratingId}
+        customIds={customIdsSet}
+        onEdit={handleEditSubject}
+        onDelete={handleDeleteSubject}
+        onAdd={handleAddScene}
       />
 
       {selectedSubjects.length > 0 && (
@@ -265,11 +303,11 @@ export default function SubjectsPage() {
       )}
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={() => router.push('/generate')}>
+        <Button variant="outline" onClick={() => router.push('/generate/characters')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
-        {mode === 'all' && characters.length > 0 ? (
+        {mode === 'all' && environments.length > 0 ? (
           <Button disabled={!canContinue} onClick={handleContinue}>
             Continue
             <ArrowRight className="ml-2 h-4 w-4" />

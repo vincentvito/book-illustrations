@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getAnthropic } from '@/lib/claude/client'
-import { buildAnalysisPrompt } from '@/lib/claude/prompts'
+import { buildAnalysisPrompt, buildCharacterExtractionPrompt } from '@/lib/claude/prompts'
 import { APIConnectionTimeoutError } from '@anthropic-ai/sdk'
 import { getStyleTemplate } from '@/lib/style-library/templates'
 import { resolveBookProfile } from '@/lib/style-library/resolve-profile'
@@ -11,9 +11,14 @@ import type { BookGenre, AgeRange } from '@/types/book-profile'
 const RequestSchema = z.object({
   storyText: z.string().min(50).max(50_000),
   mode: z.enum(['cover', 'single', 'all']),
+  phase: z.enum(['characters', 'subjects']).default('subjects'),
   styleTemplateId: z.string().optional(),
   genre: z.string().optional(),
   ageRange: z.string().optional(),
+  approvedCharacters: z.array(z.object({
+    name: z.string(),
+    appearance: z.string(),
+  })).optional(),
 })
 
 const ANALYZE_MODEL = 'claude-sonnet-4-20250514'
@@ -38,7 +43,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten(), requestId }, { status: 400 })
   }
 
-  const { storyText, mode, styleTemplateId, genre, ageRange } = parsed.data
+  const { storyText, mode, phase, styleTemplateId, genre, ageRange, approvedCharacters } = parsed.data
 
   // Resolve BookProfile from style template + genre + ageRange
   let bookProfile = undefined
@@ -49,11 +54,15 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const prompt = buildAnalysisPrompt(storyText, mode, bookProfile)
+  const prompt = phase === 'characters'
+    ? buildCharacterExtractionPrompt(storyText, bookProfile)
+    : buildAnalysisPrompt(storyText, mode, bookProfile, approvedCharacters)
+
   console.info('[analyze] request-start', {
     requestId,
     userId: user.id,
     mode,
+    phase,
     storyLength: storyText.length,
     promptLength: prompt.length,
     startedAt: new Date(requestStartedAt).toISOString(),
@@ -95,6 +104,23 @@ export async function POST(req: NextRequest) {
 
     const result = JSON.parse(jsonText)
 
+    if (phase === 'characters') {
+      if (!result.characters || !Array.isArray(result.characters)) {
+        console.warn('[analyze] invalid-characters-shape', { requestId })
+        return NextResponse.json(
+          { error: 'AI returned an unexpected format. Please try again.', requestId },
+          { status: 502 }
+        )
+      }
+      console.info('[analyze] request-success', {
+        requestId,
+        phase,
+        characterCount: result.characters.length,
+        totalDurationMs: Date.now() - requestStartedAt,
+      })
+      return NextResponse.json({ characters: result.characters })
+    }
+
     if (!result.subjects || !Array.isArray(result.subjects) || result.subjects.length === 0) {
       console.warn('[analyze] invalid-subjects-shape', { requestId })
       return NextResponse.json(
@@ -105,8 +131,10 @@ export async function POST(req: NextRequest) {
 
     console.info('[analyze] request-success', {
       requestId,
+      phase,
       subjectCount: result.subjects.length,
       characterCount: Array.isArray(result.characters) ? result.characters.length : 0,
+      environmentCount: Array.isArray(result.environments) ? result.environments.length : 0,
       totalDurationMs: Date.now() - requestStartedAt,
     })
     return NextResponse.json(result)
