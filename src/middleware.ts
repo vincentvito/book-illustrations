@@ -26,7 +26,7 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   // Protected app routes
-  if (!user && request.nextUrl.pathname.match(/^\/(dashboard|upload|generate|credits)/)) {
+  if (!user && request.nextUrl.pathname.match(/^\/(dashboard|upload|generate|credits|account-settings|character-library|ambient-library)/)) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
@@ -40,7 +40,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/(dashboard|upload|generate|credits)(.*)',
+    '/(dashboard|upload|generate|credits|account-settings|character-library|ambient-library)(.*)',
     '/login',
     '/signup',
   ],

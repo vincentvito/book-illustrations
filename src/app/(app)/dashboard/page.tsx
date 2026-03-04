@@ -47,7 +47,7 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold text-gray-900">Your Stories</h1>
           <p className="text-gray-500">Manage your illustrated stories</p>
         </div>
-        <Button onClick={() => router.push('/upload')} className="md:hidden">
+        <Button onClick={() => router.push('/upload')}>
           <Plus className="mr-2 h-4 w-4" />
           New Story
         </Button>
