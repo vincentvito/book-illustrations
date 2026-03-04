@@ -40,6 +40,7 @@ const GenerateSchema = z.object({
   environmentReferences: z.array(EnvironmentRefSchema).optional(),
   subjectEnvironment: z.string().optional(),
   editInstructions: z.string().max(500).optional(),
+  previousImageUrl: z.string().url().optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
     resolution, storyId,
     characterReferences, subjectCharacters,
     environmentReferences, subjectEnvironment,
-    editInstructions,
+    editInstructions, previousImageUrl,
   } = parsed.data
 
   const template = getStyleTemplate(styleTemplateId)
@@ -104,7 +105,11 @@ export async function POST(req: NextRequest) {
   const envRefs = relevantEnvRef ? [relevantEnvRef] : []
 
   // Combine all image refs (characters first, then environments), capped at 8 for FLUX 2 Pro
+  // When regenerating with edits, include the previous image as a reference so the model
+  // can preserve the existing composition while applying the requested changes.
+  const previousImageRefs = (editInstructions && previousImageUrl) ? [previousImageUrl] : []
   const allImageUrls = [
+    ...previousImageRefs,
     ...relevantRefs.map(r => r.referenceImageUrl),
     ...envRefs.map(r => r.referenceImageUrl),
   ].slice(0, 8)
@@ -123,6 +128,7 @@ export async function POST(req: NextRequest) {
       characterNames: relevantRefs.map(r => r.characterName),
       characterAppearances: relevantRefs.map(r => r.appearanceDescription ?? ''),
       environmentNames: envRefs.map(r => r.environmentName),
+      imageIndexOffset: previousImageRefs.length,
     })
   } else {
     prompt = buildNanoBananaPrompt({
@@ -140,7 +146,11 @@ export async function POST(req: NextRequest) {
   }
 
   if (editInstructions) {
-    prompt += `\n\nEDIT INSTRUCTIONS: Keep the same overall scene, style, and composition, but apply these changes: ${editInstructions}`
+    if (previousImageUrl) {
+      prompt += `\n\nEDIT INSTRUCTIONS: The first input image shows the current illustration. Reproduce it as closely as possible — keep the same scene, composition, characters, poses, colors, and style — but apply ONLY these specific changes: ${editInstructions}. Everything else must remain identical to the reference image.`
+    } else {
+      prompt += `\n\nEDIT INSTRUCTIONS: Keep the same overall scene, style, and composition, but apply these changes: ${editInstructions}`
+    }
   }
 
   const arInfo = findClosestAspectRatio(bookFormat.aspectRatio)

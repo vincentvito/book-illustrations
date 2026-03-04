@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 interface ImageResultProps {
   imageUrl: string
   bookFormatId: string
-  onRegenerate: (editInstructions?: string) => void
+  onRegenerate: (editInstructions?: string, currentImageUrl?: string) => void
   regenerating?: boolean
 }
 
@@ -42,7 +42,8 @@ export function ImageResult({ imageUrl, bookFormatId, onRegenerate, regenerating
 
   const handleRegenerate = () => {
     const instructions = editInstructions.trim() || undefined
-    onRegenerate(instructions)
+    // Pass the current image URL so the model can use it as a visual reference
+    onRegenerate(instructions, instructions ? imageUrl : undefined)
     setEditInstructions('')
     setShowEditPanel(false)
   }

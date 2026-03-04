@@ -6,6 +6,7 @@ import { FileDropzone } from '@/components/upload/file-dropzone'
 import { TextPasteArea } from '@/components/upload/text-paste-area'
 import { StoryPreview } from '@/components/upload/story-preview'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useGenerationStore } from '@/stores/generation-store'
 import { ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
@@ -16,17 +17,23 @@ export default function UploadPage() {
   const { storyText, storyFilename, setStory, setStoryId, reset } = useGenerationStore()
   const [uploading, setUploading] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [storyTitle, setStoryTitle] = useState(
+    storyFilename ? storyFilename.replace(/\.\w+$/, '') : ''
+  )
 
   const handleFileAccepted = (text: string, filename: string) => {
     setStory(text, filename)
+    setStoryTitle(filename.replace(/\.\w+$/, ''))
   }
 
   const handleTextSubmit = (text: string) => {
     setStory(text)
+    setStoryTitle('')
   }
 
   const handleClear = () => {
     reset()
+    setStoryTitle('')
   }
 
   const handleContinue = async () => {
@@ -37,9 +44,10 @@ export default function UploadPage() {
     const timeoutId = setTimeout(() => controller.abort(), 15_000)
 
     try {
-      const title = storyFilename
-        ? storyFilename.replace(/\.\w+$/, '')
-        : storyText.split('\n')[0].slice(0, 100) || 'Untitled Story'
+      const title = storyTitle.trim()
+        || (storyFilename
+          ? storyFilename.replace(/\.\w+$/, '')
+          : storyText.split('\n')[0].slice(0, 100) || 'Untitled Story')
 
       const res = await fetch('/api/stories', {
         method: 'POST',
@@ -88,6 +96,17 @@ export default function UploadPage() {
 
       {storyText ? (
         <div className="space-y-4">
+          <div>
+            <label htmlFor="story-title" className="block text-sm font-medium text-gray-700 mb-1">
+              Story Title
+            </label>
+            <Input
+              id="story-title"
+              value={storyTitle}
+              onChange={(e) => setStoryTitle(e.target.value)}
+              placeholder="Enter story title"
+            />
+          </div>
           <StoryPreview
             text={storyText}
             filename={storyFilename}

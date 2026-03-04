@@ -157,7 +157,7 @@ export default function ResultPage() {
     return () => clearTimeout(timer)
   }, [mode, status, attemptedCount, selectedSubjects.length])
 
-  const handleRegenerate = async (subjectId: number, editInstructions?: string) => {
+  const handleRegenerate = async (subjectId: number, editInstructions?: string, currentImageUrl?: string) => {
     setRegenerating(true)
     const subject = selectedSubjects.find(s => s.id === subjectId) || selectedSubjects[0]
 
@@ -179,6 +179,7 @@ export default function ResultPage() {
           environmentReferences: envRefsPayload,
           subjectEnvironment: subject.environment,
           editInstructions,
+          previousImageUrl: currentImageUrl,
         }),
       })
 
@@ -256,7 +257,7 @@ export default function ResultPage() {
               <ImageResult
                 imageUrl={img.url}
                 bookFormatId={bookFormatId!}
-                onRegenerate={(editInstructions) => handleRegenerate(img.subjectId, editInstructions)}
+                onRegenerate={(editInstructions, currentImageUrl) => handleRegenerate(img.subjectId, editInstructions, currentImageUrl)}
                 regenerating={regenerating}
               />
             </div>

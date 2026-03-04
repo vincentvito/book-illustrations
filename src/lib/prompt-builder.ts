@@ -316,10 +316,12 @@ export interface Flux2SceneOptions {
   characterNames: string[]
   characterAppearances?: string[]
   environmentNames?: string[]
+  /** Offset for input image numbering (e.g. 1 when a previous image occupies slot 1) */
+  imageIndexOffset?: number
 }
 
 export function buildFlux2ScenePrompt(options: Flux2SceneOptions): string {
-  const { subject, style, palette, customPalettePrompt, mode, bookFormat, bookProfile, characterNames, characterAppearances, environmentNames } = options
+  const { subject, style, palette, customPalettePrompt, mode, bookFormat, bookProfile, characterNames, characterAppearances, environmentNames, imageIndexOffset = 0 } = options
 
   const styleName = STYLE_PRESETS[style].name
   const stylePrompt = STYLE_PRESETS[style].prompt
@@ -330,7 +332,7 @@ export function buildFlux2ScenePrompt(options: Flux2SceneOptions): string {
 
   // Build character reference instructions with appearance descriptions
   const characterRefs = characterNames.map((name, i) => {
-    const imageNum = i + 1
+    const imageNum = i + 1 + imageIndexOffset
     const appearance = characterAppearances?.[i]
     return appearance
       ? `${name} (the character shown in input image ${imageNum}): ${appearance}`
@@ -338,7 +340,7 @@ export function buildFlux2ScenePrompt(options: Flux2SceneOptions): string {
   })
 
   const subjectsJson = characterNames.map((name, i) => ({
-    description: `${name} (from image ${i + 1})`,
+    description: `${name} (from image ${i + 1 + imageIndexOffset})`,
   }))
 
   const isPortrait = bookFormat.aspectRatio < 0.95
@@ -372,7 +374,7 @@ export function buildFlux2ScenePrompt(options: Flux2SceneOptions): string {
     ...((environmentNames && environmentNames.length > 0) ? [
       '',
       `ENVIRONMENT REFERENCES: ${environmentNames.map((name, i) => {
-        const imageNum = characterNames.length + i + 1
+        const imageNum = characterNames.length + i + 1 + imageIndexOffset
         return `${name} (the environment shown in input image ${imageNum})`
       }).join('. ')}. Match the layout, architecture, and vegetation but render in ${styleName} style.`,
     ] : []),

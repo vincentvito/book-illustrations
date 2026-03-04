@@ -34,7 +34,7 @@ export function MobileHeader() {
           {/* Drawer */}
           <div className="fixed inset-y-0 left-0 z-50 md:hidden">
             <div className="relative">
-              <Sidebar onNavigate={() => setOpen(false)} />
+              <Sidebar />
               <button
                 onClick={() => setOpen(false)}
                 className="absolute right-2 top-4 rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"

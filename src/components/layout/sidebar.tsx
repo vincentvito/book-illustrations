@@ -1,43 +1,18 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import {
-  BookOpen,
-  Home,
-  FilePlus,
-  CreditCard,
-  Settings,
-  Users,
-  Image,
-  LogOut,
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { BookOpen, Plus, Coins, LogOut, FileText } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useCredits } from '@/hooks/use-credits'
+import { useStories } from '@/hooks/use-stories'
+import { Button } from '@/components/ui/button'
 
-interface NavItem {
-  label: string
-  href: string
-  icon: LucideIcon
-}
-
-const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: Home },
-  { label: 'New Book', href: '/upload', icon: FilePlus },
-  { label: 'Credits', href: '/credits', icon: CreditCard },
-  { label: 'Account Settings', href: '/account-settings', icon: Settings },
-  { label: 'Character Library', href: '/character-library', icon: Users },
-  { label: 'Ambient Library', href: '/ambient-library', icon: Image },
-]
-
-interface SidebarProps {
-  onNavigate?: () => void
-}
-
-export function Sidebar({ onNavigate }: SidebarProps) {
+export function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { credits, loading: creditsLoading } = useCredits()
+  const { stories, loading: storiesLoading } = useStories()
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -45,6 +20,10 @@ export function Sidebar({ onNavigate }: SidebarProps) {
     if (typeof window !== 'undefined') {
       window.location.href = '/login'
     }
+  }
+
+  const handleNewStory = () => {
+    router.push('/upload')
   }
 
   return (
@@ -55,49 +34,69 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         <span className="text-lg font-bold text-gray-900">Book Illustrator</span>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
-        {NAV_ITEMS.map((item) => {
-          const isActive =
-            item.href === '/dashboard'
-              ? pathname === '/dashboard' || pathname.startsWith('/dashboard/')
-              : pathname === item.href || pathname.startsWith(item.href + '/')
-          const Icon = item.icon
+      {/* New Story Button */}
+      <div className="p-4">
+        <Button onClick={handleNewStory} className="w-full">
+          <Plus className="mr-2 h-4 w-4" />
+          New Story
+        </Button>
+      </div>
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onNavigate}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-gray-900 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <Icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-gray-500'}`} />
-              <span>{item.label}</span>
-              {item.href === '/credits' && (
-                <span
-                  className={`ml-auto text-xs ${
-                    isActive ? 'text-gray-300' : 'text-gray-400'
+      {/* Story List */}
+      <div className="flex-1 overflow-y-auto px-3">
+        <p className="mb-2 px-2 text-xs font-medium uppercase tracking-wider text-gray-400">
+          Your Stories
+        </p>
+        {storiesLoading ? (
+          <div className="space-y-2 px-2">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-10 animate-pulse rounded-lg bg-gray-100" />
+            ))}
+          </div>
+        ) : stories.length === 0 ? (
+          <p className="px-2 text-sm text-gray-400">No stories yet</p>
+        ) : (
+          <nav className="space-y-1">
+            {stories.map(story => {
+              const isActive = pathname === `/dashboard/${story.id}`
+              return (
+                <Link
+                  key={story.id}
+                  href={`/dashboard/${story.id}`}
+                  className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
+                    isActive
+                      ? 'border-l-2 border-orange-600 bg-orange-50 font-medium text-orange-700'
+                      : 'text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  {creditsLoading ? '...' : credits}
-                </span>
-              )}
-            </Link>
-          )
-        })}
-      </nav>
+                  <FileText className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-orange-600' : 'text-gray-400'}`} />
+                  <span className="truncate">{story.title}</span>
+                  {story.generation_count > 0 && (
+                    <span className={`ml-auto flex-shrink-0 text-xs ${isActive ? 'text-orange-500' : 'text-gray-400'}`}>
+                      {story.generation_count}
+                    </span>
+                  )}
+                </Link>
+              )
+            })}
+          </nav>
+        )}
+      </div>
 
       {/* Footer */}
-      <div className="border-t border-gray-200 p-4">
+      <div className="border-t border-gray-200 p-4 space-y-3">
+        <Link
+          href="/credits"
+          className="flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1.5 text-sm font-medium text-orange-700 hover:bg-orange-100 transition-colors"
+        >
+          <Coins className="h-4 w-4" />
+          {creditsLoading ? '...' : `${credits} credits`}
+        </Link>
         <button
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+          className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
         >
-          <LogOut className="h-5 w-5" />
+          <LogOut className="h-4 w-4" />
           Log out
         </button>
       </div>

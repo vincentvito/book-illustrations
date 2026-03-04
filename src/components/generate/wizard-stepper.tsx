@@ -21,11 +21,11 @@ const BASE_STEPS: Step[] = [
 
 export function WizardStepper() {
   const pathname = usePathname()
-  const { mode, environments } = useGenerationStore()
+  const { mode } = useGenerationStore()
 
   const steps = [...BASE_STEPS]
   // Insert Ambience before Result if applicable
-  if (mode === 'all' && environments.length > 0) {
+  if (mode === 'all') {
     const resultIdx = steps.findIndex(s => s.path === '/generate/result')
     steps.splice(resultIdx, 0, { path: '/generate/ambience', label: 'Ambience' })
   }
